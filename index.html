@@ -6,26 +6,114 @@
 <script src="https://unpkg.com/cesium/Build/Cesium/Cesium.js"></script>
 <link href="https://unpkg.com/cesium/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 <style>
-  html, body, #cesiumContainer { width:100%; height:100%; margin:0; padding:0; }
-  #uiLabel {
-    position:absolute;
-    background:white;
-    border:1px solid #333;
-    padding:5px;
-    display:none;
-    pointer-events:none;
-  }
+html, body, #cesiumContainer { width:100%; height:100%; margin:0; padding:0; }
+#uiLabel {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #4CAF50;   
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  display: none;
+  pointer-events: auto;
+  min-width: 200px;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  z-index: 1000;
+}
+
+/* Wrapper nagłówek + button */
+#labelHeaderWrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+/* Nagłówek zajmuje pozostałą przestrzeń */
+#labelHeader {
+  font-weight: bold;
+  flex-grow: 1;
+}
+
+/* Przycisk */
+#closeBtn {
+  flex-shrink: 0;
+  cursor: pointer;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+#closeBtn:hover {
+  background: #45a049;
+}
+
+#uiLabel ul li {
+  margin-bottom: 4px;
+}
 </style>
 </head>
 <body>
 <div id="cesiumContainer"></div>
 <div id="uiLabel">
-  <span id="labelText"></span>
-  <button id="closeBtn" style="margin-left:5px;">X</button>
+  <div id="labelHeaderWrapper">
+    <div id="labelHeader"></div>
+    <button id="closeBtn">X</button>
+  </div>
+  <ul id="labelList" style="margin:0; padding:0; list-style:none;"></ul>
 </div>
-
 <script>
+function loadMarathonsFromURL(url, callback) {
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error("Nie udało się wczytać pliku");
+            return response.text();
+        })
+        .then(text => {
+            const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+            const marathonMap = new Map();
+
+            lines.forEach(line => {
+                const parts = line.split("|").map(p => p.trim());
+                if(parts.length < 7) return;
+
+                const [id, country, city, lonStr, latStr, type, date] = parts;
+                const lon = parseFloat(lonStr);
+                const lat = parseFloat(latStr);
+
+                // jeśli obiekt o tym id nie istnieje, dodajemy
+                if (!marathonMap.has(id)) {
+                    marathonMap.set(id, {
+                        id: id,
+                        country: country,
+                        city: city,
+                        lon: lon,
+                        lat: lat,
+                        marathons: []
+                    });
+                }
+
+                // dodajemy maraton do tablicy marathons
+                marathonMap.get(id).marathons.push({ type: type, date: date });
+            });
+
+            // zamiana mapy na tablicę
+            const marathonPointsGrouped = Array.from(marathonMap.values());
+            callback(marathonPointsGrouped);
+        })
+        .catch(err => console.error("Błąd wczytywania maratonów:", err));
+}
+
 const viewer = new Cesium.Viewer('cesiumContainer', {
+    terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+
+    imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+        url: "https://a.tile.openstreetmap.org/"
+    }),
     baseLayerPicker: false,
     geocoder: false,
     homeButton: false,
@@ -35,8 +123,7 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     animation: false,
     creditsDisplay: false,    // usuwa box w górnym rogu
     selectionIndicator: false, // usuwa zielone ramki wokół punktów
-    infoBox: false,             // wyłącza cały infoBox
-    terrainProvider: new Cesium.EllipsoidTerrainProvider()
+    infoBox: false,
 });
 
 // OSM
@@ -51,46 +138,17 @@ scene.skyAtmosphere.show = false;
 scene.sun.show = false;
 scene.moon.show = false;
 
+const ellipsoid = Cesium.Ellipsoid.WGS84;
+const occluder = new Cesium.EllipsoidalOccluder(
+    ellipsoid,
+    viewer.camera.positionWC
+);
+
 // Kamera startowa
 viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(0,0,2000000) });
 scene.screenSpaceCameraController.minimumZoomDistance = 5000;
 scene.screenSpaceCameraController.maximumZoomDistance = 6371000*2;
 // Punkty
-const marathonPoints = [
-  { name: "Dubai Marathon", lon: 55.2708, lat: 25.2048, date: "01.02.2026" },
-  { name: "Saqqara Half Marathon", lon: 31.2167, lat: 29.8717, date: "13.02.2026" },
-  { name: "Little Rock 10 km", lon: -92.2896, lat: 34.7465, date: "28.02.2026" },
-  { name: "Little Rock Marathon", lon: -92.2896, lat: 34.7465, date: "01.03.2026" },
-  { name: "Los Angeles 5 km", lon: -118.2437, lat: 34.0522, date: "07.03.2026" },
-  { name: "Los Angeles Marathon", lon: -118.2437, lat: 34.0522, date: "08.03.2026" },
-  { name: "Jerusalem Marathon", lon: 35.2137, lat: 31.7683, date: "27.03.2026" },
-  { name: "Ottawa 2km+5km+10km", lon: -75.6972, lat: 45.4215, date: "23.05.2026" },
-  { name: "Ottawa Marathon", lon: -75.6972, lat: 45.4215, date: "24.05.2026" },
-  { name: "Cape Town 10 km", lon: 18.4241, lat: -33.9249, date: "23.05.2026" },
-  { name: "Cape Town Marathon", lon: 18.4241, lat: -33.9249, date: "24.05.2026" },
-  { name: "Anchorage Marathon", lon: -149.9003, lat: 61.2181, date: "20.06.2026" },
-  { name: "Vancouver Half Marathon", lon: -123.1207, lat: 49.2827, date: "28.06.2026" }
-];
-
-// Dodanie entity i stanu kliknięcia
-const points = marathonPoints.map(p => {
-    const entity = viewer.entities.add({
-        position: Cesium.Cartesian3.fromDegrees(p.lon, p.lat, 0),
-        point: {
-            pixelSize: 10,
-            color: Cesium.Color.RED,
-            outlineColor: Cesium.Color.WHITE,
-            outlineWidth: 1
-        },
-        description: `${p.name} <br> ${p.date}` // opcjonalnie, jeśli chcesz standardowe Cesium overlay
-    });
-
-    // Dodatkowe dane i stan kliknięcia
-    entity.data = p;
-    entity.clickState = 0; // 0 = brak kliknięcia, 1 = 1 klik
-
-    return entity;
-});
 
 const label = document.getElementById('uiLabel');
 const labelText = document.getElementById('labelText');
@@ -107,53 +165,91 @@ function hideOverlay() {
 // Przycisk zamykania
 closeBtn.addEventListener('click', hideOverlay);
 
-// Klik handler dla punktów
-const handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
-handler.setInputAction(function(click){
-    const picked = scene.pick(click.position);
-    if(Cesium.defined(picked) && picked.id){
-        const entity = picked.id;
+loadMarathonsFromURL("marathons.txt", function(marathonPoints){
 
-        if(entity.clickState === 0){
-            // 1 klik → overlay
-            entity.clickState = 1;
-            activeEntity = entity;
-            points.forEach(p => { if(p!==entity) p.clickState = 0; });
+    const points = marathonPoints.map(p => {
+        const entity = viewer.entities.add({
+            position: Cesium.Cartesian3.fromDegrees(p.lon, p.lat, 1),
+            billboard: {
+                image: "star.png",
+                width: 28,
+                height: 28,
+                verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+            }
+        });
+        entity.data = p;
+        entity.clickState = 0;
+        return entity;
+    });
+
+    // ---------------------- Handler kliknięcia ----------------------
+    const handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+    handler.setInputAction(function(click){
+        const picked = scene.pick(click.position);
+        if(Cesium.defined(picked) && picked.id){
+            const entity = picked.id;
+
+            if(entity.clickState === 0){
+                entity.clickState = 1;
+                activeEntity = entity;
+                points.forEach(p => { if(p!==entity) p.clickState = 0; });
+
+            } else {
+                viewer.camera.flyTo({
+                    destination: Cesium.Cartesian3.fromDegrees(
+                        entity.data.lon,
+                        entity.data.lat,
+                        50000
+                    ),
+                    duration: 1.5
+                });
+                entity.clickState = 0;
+                activeEntity = entity;
+            }
 
         } else {
-            // 2 klik → flyTo
-            viewer.camera.flyTo({
-                destination: Cesium.Cartesian3.fromDegrees(
-                    entity.data.lon,
-                    entity.data.lat,
-                    50000
-                ),
-                duration: 1.5
-            });
-            entity.clickState = 0;
-            activeEntity = entity;
+            hideOverlay();
+            points.forEach(p => p.clickState = 0);
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+    // ---------------------- Aktualizacja overlay i widoczności billboardów ----------------------
+    viewer.scene.preRender.addEventListener(() => {
+        if (activeEntity) {
+            const pos = activeEntity.position.getValue(Cesium.JulianDate.now());
+            const windowPos = scene.cartesianToCanvasCoordinates(pos);
+            if (windowPos) {
+
+                // nagłówek: country + city
+                const labelHeader = document.getElementById('labelHeader');
+                labelHeader.innerHTML = `${activeEntity.data.country}: ${activeEntity.data.city}`;
+
+                // lista maratonów
+                const labelList = document.getElementById('labelList');
+                labelList.innerHTML = "";
+                activeEntity.data.marathons.forEach(m => {
+                    const li = document.createElement("li");
+                    li.innerHTML = `<b>${m.type}</b>: ${m.date}`;
+                    labelList.appendChild(li);
+                });
+
+                // ustawienie pozycji overlay
+                label.style.left = windowPos.x + 'px';
+                label.style.top = windowPos.y + 'px';
+                label.style.display = 'block';
+            }
+        } else {
+            label.style.display = 'none';
         }
 
-    } else {
-        // Klik poza punktami → ukryj overlay
-        hideOverlay();
-        // reset clickState wszystkich punktów
-        points.forEach(p => p.clickState = 0);
-    }
-}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+        // occluder dla billboardów
+        occluder.cameraPosition = viewer.camera.positionWC;
+        points.forEach(entity => {
+            const pos = entity.position.getValue(Cesium.JulianDate.now());
+            entity.billboard.show = occluder.isPointVisible(pos);
+        });
+    });
 
-// Aktualizacja overlay w preRender
-viewer.scene.preRender.addEventListener(()=>{
-    if(activeEntity){
-        const pos = activeEntity.position.getValue(Cesium.JulianDate.now());
-        const windowPos = scene.cartesianToCanvasCoordinates(pos);
-        if(windowPos){
-            labelText.innerHTML = `<b>${activeEntity.data.name}</b>`;
-            label.style.left = windowPos.x + 'px';
-            label.style.top = windowPos.y + 'px';
-            label.style.display = 'block';
-        }
-    }
 });
 viewer.scene.screenSpaceCameraController.enableRotate = true;
 viewer.scene.screenSpaceCameraController.enableTranslate = true;

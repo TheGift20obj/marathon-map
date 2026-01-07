@@ -1,0 +1,13 @@
+1|Zjednoczone Emiraty Arabskie|Dubai|55.2708|25.2048|marathon|01.02.2026
+2|Egipt|Kair - Saqqara|31.2167|29.8717|half marathon|13.02.2026
+3|USA|Little Rock Chalange|-92.2896|34.7465|10 km|28.02.2026
+3|USA|Little Rock Chalange|-92.2896|34.7465|marathon|01.03.2026
+4|USA|Los Angeles|-118.2437|34.0522|5 km|07.03.2026
+4|USA|Los Angeles|-118.2437|34.0522|marathon|08.03.2026
+5|Izrael|Jeruzalem|35.2137|31.7683|marathon|27.03.2026
+6|Canada|Ottawa - Chalange|-75.6972|45.4215|2 km + 5 km + 10 km|23.05.2026
+6|Canada|Ottawa - Chalange|-75.6972|45.4215|marathon|24.05.2026
+6a|RPA|Cape Town|18.4241|-33.9249|10 km|23.05.2026
+6a|RPA|Cape Town|18.4241|-33.9249|marathon|24.05.2026
+7|USA|Alaska - Anchorage|-149.9003|61.2181|marathon|20.06.2026
+8|Canada|Vancouver|-123.1207|49.2827|half marathon|28.06.2026
