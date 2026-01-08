@@ -139,6 +139,13 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     infoBox: false,
 });
 
+viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
+    Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK
+);
+viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
+    Cesium.ScreenSpaceEventType.PINCH_MOVE
+);
+
 const controller = viewer.scene.screenSpaceCameraController;
 controller.enableTranslate = false;
 controller.enableRotate = false;
@@ -148,7 +155,7 @@ controller.enableZoom = true;
 controller.enableDoubleClickZoom = false;
 
 // Wyłącz multi-touch dla mobilnych
-controller.rotateEventTypes = [];
+controller.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
 controller.tiltEventTypes = [];
 controller.translateEventTypes = [];
 controller.pinchEventTypes = [];
@@ -156,12 +163,6 @@ controller.wheelEventTypes = [];
 
 // odłączenie double-click zoom
 controller.enableDoubleClickZoom = false;
-viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
-    Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK
-);
-viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
-    Cesium.ScreenSpaceEventType.PINCH_MOVE
-);
 
 // OSM
 viewer.imageryLayers.addImageryProvider(
