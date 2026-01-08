@@ -22,6 +22,19 @@ html, body, #cesiumContainer { width:100%; height:100%; margin:0; padding:0; }
   z-index: 1000;
 }
 
+/* mobile responsive */
+@media (max-width: 768px) {
+  #uiLabel {
+    min-width: 300px;
+    font-size: 18px;
+    padding: 16px 20px;
+  }
+  #closeBtn {
+    font-size: 16px;
+    padding: 4px 8px;
+  }
+}
+
 /* Wrapper nagłówek + button */
 #labelHeaderWrapper {
   display: flex;
@@ -126,28 +139,26 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     infoBox: false,
 });
 
-// --- ustawienia kontroli kamery ---
 const controller = viewer.scene.screenSpaceCameraController;
-
-// blokada przesuwania
 controller.enableTranslate = false;
-
-// obrót i zoom działają
-controller.enableRotate = true;
-controller.enableTilt = true;
-controller.enableZoom = true;
+controller.enableRotate = false;
+controller.enableTilt = false;
 controller.enableLook = false;
+controller.enableZoom = true;
+controller.enableDoubleClickZoom = false;
+
+// Wyłącz multi-touch dla mobilnych
+controller.rotateEventTypes = [];
+controller.tiltEventTypes = [];
+controller.translateEventTypes = [];
+controller.pinchEventTypes = [];
+controller.wheelEventTypes = [];
 
 // odłączenie double-click zoom
 controller.enableDoubleClickZoom = false;
 viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
     Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK
 );
-
-// 🔹 Dla telefonu/multitouch
-controller.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG, Cesium.CameraEventType.MIDDLE_DRAG];
-controller.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG, Cesium.CameraEventType.PINCH];
-controller.translateEventTypes = [];
 
 // OSM
 viewer.imageryLayers.addImageryProvider(
