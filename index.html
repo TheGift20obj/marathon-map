@@ -159,6 +159,9 @@ controller.enableDoubleClickZoom = false;
 viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
     Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK
 );
+viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
+    Cesium.ScreenSpaceEventType.PINCH_MOVE
+);
 
 // OSM
 viewer.imageryLayers.addImageryProvider(
