@@ -139,12 +139,41 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     infoBox: false,
 });
 
-viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
-    Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK
-);
-viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
-    Cesium.ScreenSpaceEventType.PINCH_MOVE
-);
+const handler = viewer.cesiumWidget.screenSpaceEventHandler;
+
+// Odłącz niepożądane zdarzenia
+handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+handler.removeInputAction(Cesium.ScreenSpaceEventHandler.TwoPointMotionEvent);
+
+// Przechwytujemy dwupalczowy gest i zostawiamy tylko zoom
+handler.setInputAction(function(twoPoints){
+    // weź pozycje dwóch punktów
+    const p1 = twoPoints.position1;
+    const p2 = twoPoints.position2;
+
+    // odległość między palcami w pikselach
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const distance = Math.sqrt(dx*dx + dy*dy);
+
+    // zachowujemy zoom, bez tilt/rotate
+    // Prosty sposób: używamy wbudowanego zoomu na podstawie różnicy odległości
+    // Można zapamiętać poprzednią odległość, aby obliczyć delta
+    if (!handler._prevDistance) handler._prevDistance = distance;
+
+    const delta = distance - handler._prevDistance;
+    handler._prevDistance = distance;
+
+    // Zmieniamy pozycję kamery wzdłuż osi widoku (zoom)
+    // wartość 0.5 można dopasować dla czułości zoomu
+    viewer.camera.moveForward(-delta * 0.5);  
+
+}, Cesium.ScreenSpaceEventHandler.TwoPointMotionEvent);
+
+// Reset po zakończeniu gestu
+handler.setInputAction(function(){
+    handler._prevDistance = null;
+}, Cesium.ScreenSpaceEventType.PINCH_END);
 
 //const controller = viewer.scene.screenSpaceCameraController;
 //controller.enableRotate = true;
