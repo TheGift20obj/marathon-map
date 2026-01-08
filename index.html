@@ -147,6 +147,7 @@ function loadMarathonsFromURL(url, callback) {
         .catch(err => console.error("Błąd wczytywania maratonów:", err));
 }
 
+
 const viewer = new Cesium.Viewer('cesiumContainer', {
     terrainProvider: new Cesium.EllipsoidTerrainProvider(),
 
@@ -164,6 +165,15 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     selectionIndicator: false, // usuwa zielone ramki wokół punktów
     infoBox: false,
 });
+
+function getBillboardSize() {
+    const width = window.innerWidth;
+
+    if (width <= 480) return 36;   // telefony - większe gwiazdy
+    if (width <= 768) return 28;   // małe tablety
+    if (width <= 1024) return 32;  // większe tablety / laptopy
+    return 32;                      // desktop
+}
 
 const handler = viewer.cesiumWidget.screenSpaceEventHandler;
 
@@ -258,12 +268,13 @@ closeBtn.addEventListener('click', hideOverlay);
 loadMarathonsFromURL("marathons.txt", function(marathonPoints){
 
     const points = marathonPoints.map(p => {
+        const size = getBillboardSize();
         const entity = viewer.entities.add({
             position: Cesium.Cartesian3.fromDegrees(p.lon, p.lat, 1),
             billboard: {
                 image: "star.png",
-                width: 28,
-                height: 28,
+                width: size,
+                height: size,
                 verticalOrigin: Cesium.VerticalOrigin.BOTTOM
             }
         });
