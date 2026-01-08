@@ -143,13 +143,34 @@ const handler = viewer.cesiumWidget.screenSpaceEventHandler;
 
 handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 handler.removeInputAction(Cesium.ScreenSpaceEventType.PINCH_MOVE);
-//handler.removeInputAction(Cesium.ScreenSpaceEventType.PINCH_END);
-h
+handler.removeInputAction(Cesium.ScreenSpaceEventType.PINCH_END);
+
 // --- Wyłącz tilt w controllerze (nie potrzebny teraz) ---
-//viewer.scene.screenSpaceCameraController.enableTilt = false;
+viewer.scene.screenSpaceCameraController.enableTilt = false;
 
 // --- Twój własny PINCH_MOVE (dwoma palcami) tylko zoom ---
+let previousPinchDistance = null;
 
+handler.setInputAction(function(twoPoints) {
+    // Oblicz odległość między palcami
+    const dx = twoPoints.position2.x - twoPoints.position1.x;
+    const dy = twoPoints.position2.y - twoPoints.position1.y;
+    const distance = Math.sqrt(dx*dx + dy*dy);
+
+    if (previousPinchDistance !== null) {
+        const delta = distance - previousPinchDistance;
+
+        // Zoom kamery wzdłuż kierunku patrzenia
+        viewer.camera.moveForward(-delta * 0.5); // dostosuj czułość
+    }
+
+    previousPinchDistance = distance;
+}, Cesium.ScreenSpaceEventHandler.TwoPointMotionEvent);
+
+// Reset po zakończeniu gestu
+handler.setInputAction(function() {
+    previousPinchDistance = null;
+}, Cesium.ScreenSpaceEventHandler.TwoPointEndEvent);
 
 //const controller = viewer.scene.screenSpaceCameraController;
 //controller.enableRotate = true;
