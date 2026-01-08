@@ -146,23 +146,23 @@ viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
     Cesium.ScreenSpaceEventType.PINCH_MOVE
 );
 
-const controller = viewer.scene.screenSpaceCameraController;
-controller.enableRotate = true;
-controller.enableTranslate = true;
-controller.enableTilt = true;
-controller.enableZoom = true;
-controller.enableLook = false;
-controller.enableDoubleClickZoom = false;
+//const controller = viewer.scene.screenSpaceCameraController;
+//controller.enableRotate = true;
+//controller.enableTranslate = true;
+//controller.enableTilt = true;
+//controller.enableZoom = true;
+//controller.enableLook = false;
+//controller.enableDoubleClickZoom = false;
 
 // Wyłącz multi-touch dla mobilnych
-controller.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
-controller.tiltEventTypes = [];
-controller.translateEventTypes = [];
+//controller.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
+//controller.tiltEventTypes = [];
+//controller.translateEventTypes = [];
 //controller.pinchEventTypes = [];
 //controller.wheelEventTypes = [];
 
 // odłączenie double-click zoom
-controller.enableDoubleClickZoom = false;
+//controller.enableDoubleClickZoom = false;
 
 // OSM
 viewer.imageryLayers.addImageryProvider(
