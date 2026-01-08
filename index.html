@@ -139,6 +139,21 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     infoBox: false,
 });
 
+const controller = viewer.scene.screenSpaceCameraController;
+
+// Wyłącz tilt i obrót dla pinch
+controller.enableRotate = true;        // jeden palec
+controller.enableTilt = false;         // tilt wyłączony całkowicie
+controller.enableTranslate = false;    // przesuwanie wyłączone
+controller.enableZoom = true;          // zoom działa
+controller.enableLook = false;
+
+// Nadpisz pinchEventTypes tak, aby nie wywoływało tilt/rotate
+controller.pinchEventTypes = [Cesium.CameraEventType.PINCH]; // tylko pinch = zoom
+controller.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG]; // jeden palec = obrót
+controller.tiltEventTypes = []; // brak tilt
+controller.translateEventTypes = []; // brak przesuwania
+
 const handler = viewer.cesiumWidget.screenSpaceEventHandler;
 
 // Odłącz niepożądane zdarzenia
