@@ -143,10 +143,10 @@ const handler = viewer.cesiumWidget.screenSpaceEventHandler;
 
 handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 handler.removeInputAction(Cesium.ScreenSpaceEventType.PINCH_MOVE);
-handler.removeInputAction(Cesium.ScreenSpaceEventType.PINCH_END);
+//handler.removeInputAction(Cesium.ScreenSpaceEventType.PINCH_END);
 
 // --- Wyłącz tilt w controllerze (nie potrzebny teraz) ---
-viewer.scene.screenSpaceCameraController.enableTilt = false;
+//viewer.scene.screenSpaceCameraController.enableTilt = false;
 
 // --- Twój własny PINCH_MOVE (dwoma palcami) tylko zoom ---
 
