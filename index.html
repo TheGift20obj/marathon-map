@@ -126,6 +126,29 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     infoBox: false,
 });
 
+// --- ustawienia kontroli kamery ---
+const controller = viewer.scene.screenSpaceCameraController;
+
+// blokada przesuwania
+controller.enableTranslate = false;
+
+// obrót i zoom działają
+controller.enableRotate = true;
+controller.enableTilt = true;
+controller.enableZoom = true;
+controller.enableLook = false;
+
+// odłączenie double-click zoom
+controller.enableDoubleClickZoom = false;
+viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
+    Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK
+);
+
+// 🔹 Dla telefonu/multitouch
+controller.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG, Cesium.CameraEventType.MIDDLE_DRAG];
+controller.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG, Cesium.CameraEventType.PINCH];
+controller.translateEventTypes = [];
+
 // OSM
 viewer.imageryLayers.addImageryProvider(
     new Cesium.OpenStreetMapImageryProvider({ url: 'https://a.tile.openstreetmap.org/' })
@@ -251,20 +274,6 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
     });
 
 });
-viewer.scene.screenSpaceCameraController.enableRotate = true;
-viewer.scene.screenSpaceCameraController.enableTranslate = true;
-viewer.scene.screenSpaceCameraController.enableTilt = true;
-viewer.scene.screenSpaceCameraController.enableZoom = true;
-
-// **To najważniejsze:**
-viewer.scene.screenSpaceCameraController.enableLook = false; 
-// lub dokładniej: zablokuj domyślny double-click zoom
-viewer.scene.screenSpaceCameraController.enableInputs = true;
-viewer.scene.screenSpaceCameraController.enableDoubleClickZoom = false;
-
-viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
-    Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK
-);
 
 </script>
 </body>
