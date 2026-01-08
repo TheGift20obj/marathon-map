@@ -8,18 +8,20 @@
 <style>
 html, body, #cesiumContainer { width:100%; height:100%; margin:0; padding:0; }
 #uiLabel {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.95);
-  border: 2px solid #4CAF50;   
-  border-radius: 8px;
-  padding: 8px 12px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-  display: none;
-  pointer-events: auto;
-  min-width: 200px;
-  font-family: Arial, sans-serif;
-  font-size: 14px;
-  z-index: 1000;
+    position: fixed; /* zamiast absolute */
+    top: 10px;       /* np. odstęp od góry */
+    left: 50%;       /* środkuje popup w poziomie */
+    transform: translateX(-50%); /* centrowanie */
+    max-width: 90%;  /* nie wychodzi poza ekran */
+    z-index: 1000;
+    background: rgba(255,255,255,0.95);
+    border: 2px solid #4CAF50;
+    border-radius: 8px;
+    padding: 8px 12px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    pointer-events: auto;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
 }
 
 /* Wrapper nagłówek + button */
@@ -286,8 +288,27 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
                 });
 
                 // ustawienie pozycji overlay
-                label.style.left = windowPos.x + 'px';
-                label.style.top = windowPos.y + 'px';
+                let x = windowPos.x;
+                let y = windowPos.y;
+
+                // ograniczamy popup żeby nie wychodził poza ekran
+                const popup = document.getElementById('uiLabel');
+                const popupWidth = popup.offsetWidth;
+                const popupHeight = popup.offsetHeight;
+                const padding = 10; // minimalny odstęp od krawędzi
+
+                if (x + popupWidth > window.innerWidth - padding) {
+                    x = window.innerWidth - popupWidth - padding;
+                }
+                if (x < padding) x = padding;
+
+                if (y + popupHeight > window.innerHeight - padding) {
+                    y = window.innerHeight - popupHeight - padding;
+                }
+                if (y < padding) y = padding;
+
+                popup.style.left = x + 'px';
+                popup.style.top = y + 'px';
                 label.style.display = 'block';
             }
         } else {
