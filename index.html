@@ -325,7 +325,7 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
         const isPortrait = window.innerHeight > window.innerWidth;
 
         // ustawienia gwiazdek
-        const starSize = isPortrait ? 56 : 28; // 2x rozmiar w pionie
+        const starSize = isPortrait ? 64 : 32; // 2x rozmiar w pionie
         points.forEach(entity => {
             entity.billboard.width = starSize;
             entity.billboard.height = starSize;
@@ -333,14 +333,14 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
 
         // ustawienia pop-up
         const label = document.getElementById('uiLabel');
-        if(isPortrait){
-            label.style.minWidth = '400px';
-            label.style.fontSize = '22px';
-            label.style.padding = '16px 20px';
+        if (isPortrait) {
+            label.style.minWidth = '458px';
+            label.style.fontSize = '25px';
+            label.style.padding = '18px 23px';
         } else {
-            label.style.minWidth = '200px';
-            label.style.fontSize = '14px';
-            label.style.padding = '8px 12px';
+            label.style.minWidth = '229px';
+            label.style.fontSize = '16px';
+            label.style.padding = '9px 14px';
         }
     }
 
