@@ -1,0 +1,46 @@
+html, body, #cesiumContainer { width:100%; height:100%; margin:0; padding:0; }
+#uiLabel {
+    position: fixed;
+    top: 10px;
+    max-width: 90%;
+    z-index: 1000;
+    background: rgba(255,255,255,0.95);
+    border: 2px solid #4CAF50;
+    border-radius: 8px;
+    padding: 8px 12px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    pointer-events: auto;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+}
+
+#labelHeaderWrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+#labelHeader {
+  font-weight: bold;
+  flex-grow: 1;
+}
+
+#closeBtn {
+  flex-shrink: 0;
+  cursor: pointer;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+#closeBtn:hover {
+  background: #45a049;
+}
+
+#uiLabel ul li {
+  margin-bottom: 4px;
+}
