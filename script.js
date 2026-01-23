@@ -37,6 +37,11 @@ function loadMarathonsFromURL(url, callback) {
 }
 
 
+// Detect mobile devices for further optimizations
+const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+const isSmallScreen = window.innerWidth < 768;
+const isVerySmallScreen = window.innerWidth < 480;
+
 const viewer = new Cesium.Viewer('cesiumContainer', {
     terrainProvider: new Cesium.EllipsoidTerrainProvider(),
 
@@ -55,17 +60,6 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     selectionIndicator: false, // usuwa zielone ramki wokół punktów
     infoBox: false,
 });
-
-// Performance optimizations
-viewer.scene.globe.maximumScreenSpaceError = 4; // Reduce terrain detail for better performance
-viewer.scene.requestRenderMode = true; // Render only when needed
-viewer.scene.fog.enabled = false; // Disable fog for simpler rendering
-viewer.scene.globe.enableLighting = false; // Disable lighting for flat appearance and performance
-
-// Detect mobile devices for further optimizations
-const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-const isSmallScreen = window.innerWidth < 768;
-const isVerySmallScreen = window.innerWidth < 480;
 
 if (isMobile || isSmallScreen) {
     viewer.resolutionScale = 0.5; // Reduce resolution for better performance on mobile
@@ -127,6 +121,28 @@ const occluder = new Cesium.EllipsoidalOccluder(
     viewer.camera.positionWC
 );
 
+function getBearing(position, camera) {
+    const direction = Cesium.Cartesian3.subtract(position, camera.position, new Cesium.Cartesian3());
+    Cesium.Cartesian3.normalize(direction, direction);
+    const enu = camera.transformDirectionToWorld(direction);
+    return Math.atan2(enu.y, enu.x);
+}
+
+function getScreenEdgePosition(bearing, canvas) {
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const dx = Math.cos(bearing);
+    const dy = Math.sin(bearing);
+    let t = 1;
+    if (dx > 0) t = Math.min(t, (canvas.width - centerX) / dx);
+    else if (dx < 0) t = Math.min(t, (0 - centerX) / dx);
+    if (dy > 0) t = Math.min(t, (canvas.height - centerY) / dy);
+    else if (dy < 0) t = Math.min(t, (0 - centerY) / dy);
+    const screenX = centerX + t * dx;
+    const screenY = centerY + t * dy;
+    return { x: screenX, y: screenY };
+}
+
 viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(55.2708,25.2048,9000000) });
 scene.screenSpaceCameraController.minimumZoomDistance = 1000000;
 scene.screenSpaceCameraController.maximumZoomDistance = 8571000*2;
@@ -158,6 +174,18 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
         });
         entity.data = p;
         entity.clickState = 0;
+
+        // Create arrow div for off-screen indication
+        entity.arrowDiv = document.createElement('div');
+        entity.arrowDiv.style.position = 'absolute';
+        entity.arrowDiv.style.zIndex = '1001';
+        entity.arrowDiv.style.fontSize = isSmallScreen ? '30px' : '20px';
+        entity.arrowDiv.style.color = 'red';
+        entity.arrowDiv.innerHTML = '→';
+        entity.arrowDiv.style.display = 'none';
+        entity.arrowDiv.style.pointerEvents = 'none';
+        document.body.appendChild(entity.arrowDiv);
+
         return entity;
     });
 
@@ -237,12 +265,24 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
             occluder.cameraPosition = viewer.camera.positionWC;
             points.forEach(entity => {
                 const pos = entity.position.getValue(Cesium.JulianDate.now());
-                entity.billboard.show = occluder.isPointVisible(pos);
+                const visible = occluder.isPointVisible(pos);
+                entity.billboard.show = visible;
+                if (!visible) {
+                    const bearing = getBearing(pos, viewer.camera);
+                    const edgePos = getScreenEdgePosition(bearing, scene.canvas);
+                    entity.arrowDiv.style.left = edgePos.x + 'px';
+                    entity.arrowDiv.style.top = edgePos.y + 'px';
+                    entity.arrowDiv.style.transform = `rotate(${bearing}rad)`;
+                    entity.arrowDiv.style.display = 'block';
+                } else {
+                    entity.arrowDiv.style.display = 'none';
+                }
             });
         } else {
-            // In 2D, show all points
+            // In 2D, show all points, hide arrows
             points.forEach(entity => {
                 entity.billboard.show = true;
+                entity.arrowDiv.style.display = 'none';
             });
         }
     });
@@ -261,13 +301,13 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
 
         const label = document.getElementById('uiLabel');
         if (isVerySmallScreen) {
-            label.style.width = '60%'; // Larger for very small phones
+            label.style.width = '90%'; // Larger for very small phones
+            label.style.fontSize = '36px';
+            label.style.padding = '40px 45px';
+        } else if (isSmallScreen) {
+            label.style.width = '85%';
             label.style.fontSize = '28px';
             label.style.padding = '30px 35px';
-        } else if (isSmallScreen) {
-            label.style.width = '80%';
-            label.style.fontSize = '22px';
-            label.style.padding = '25px 30px';
         } else {
             label.style.width = 'auto';
             label.style.minWidth = '229px';
