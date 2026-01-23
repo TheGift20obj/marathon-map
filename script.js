@@ -395,7 +395,7 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
         // Calculate star size based on screen width (larger on smaller screens)
         let starSize;
         if (isSmallScreen) {
-            starSize = screenWidth / 2;
+            starSize = screenWidth / 3.14;
         } else {
             starSize = 32;
         }
@@ -414,7 +414,7 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
             label.style.fontSize = '80px';
             label.style.padding = '80px 85px';
         } else if (isSmallScreen) {
-            label.style.width = '50%';
+            label.style.width = '31.4%';
             label.style.fontSize = '72px';
             label.style.padding = '70px 75px';
         } else {
