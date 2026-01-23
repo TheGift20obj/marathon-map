@@ -55,6 +55,12 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     infoBox: false,
 });
 
+// Performance optimizations
+viewer.scene.globe.maximumScreenSpaceError = 4; // Reduce terrain detail for better performance
+viewer.scene.requestRenderMode = true; // Render only when needed
+viewer.scene.fog.enabled = false; // Disable fog for simpler rendering
+viewer.scene.globe.enableLighting = false; // Disable lighting for flat appearance and performance
+
 const handler = viewer.cesiumWidget.screenSpaceEventHandler;
 
 handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
@@ -83,7 +89,11 @@ handler.setInputAction(function() {
 }, Cesium.ScreenSpaceEventHandler.TwoPointEndEvent);
 
 viewer.imageryLayers.addImageryProvider(
-    new Cesium.OpenStreetMapImageryProvider({ url: 'https://a.tile.openstreetmap.org/' })
+    new Cesium.OpenStreetMapImageryProvider({ 
+        url: 'https://a.tile.openstreetmap.org/',
+        minimumLevel: 0,
+        maximumLevel: 10 // Limit maximum zoom level for performance
+    })
 );
 
 const scene = viewer.scene;
@@ -213,15 +223,28 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
 
     function adjustForOrientation() {
         const isPortrait = window.innerHeight > window.innerWidth;
+        const isSmallScreen = window.innerWidth < 768;
 
-        const starSize = isPortrait ? 64 : 32;
+        let starSize;
+        if (isSmallScreen) {
+            starSize = 80;
+        } else if (isPortrait) {
+            starSize = 64;
+        } else {
+            starSize = 32;
+        }
+
         points.forEach(entity => {
             entity.billboard.width = starSize;
             entity.billboard.height = starSize;
         });
 
         const label = document.getElementById('uiLabel');
-        if (isPortrait) {
+        if (isSmallScreen) {
+            label.style.minWidth = '90%';
+            label.style.fontSize = '20px';
+            label.style.padding = '20px 25px';
+        } else if (isPortrait) {
             label.style.minWidth = '458px';
             label.style.fontSize = '25px';
             label.style.padding = '18px 23px';
