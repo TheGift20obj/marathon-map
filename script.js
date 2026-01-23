@@ -123,8 +123,7 @@ const occluder = new Cesium.EllipsoidalOccluder(
 function getBearing(position, camera) {
     const direction = Cesium.Cartesian3.subtract(position, camera.position, new Cesium.Cartesian3());
     Cesium.Cartesian3.normalize(direction, direction);
-    const enu = camera.transformDirectionToWorld(direction);
-    return Math.atan2(enu.y, enu.x);
+    return Math.atan2(direction.y, direction.x);
 }
 
 function getScreenEdgePosition(bearing, canvas) {
