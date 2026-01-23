@@ -61,6 +61,24 @@ viewer.scene.requestRenderMode = true; // Render only when needed
 viewer.scene.fog.enabled = false; // Disable fog for simpler rendering
 viewer.scene.globe.enableLighting = false; // Disable lighting for flat appearance and performance
 
+// Detect mobile devices for further optimizations
+const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+const isSmallScreen = window.innerWidth < 768;
+const isVerySmallScreen = window.innerWidth < 480;
+
+if (isMobile || isSmallScreen) {
+    viewer.resolutionScale = 0.5; // Reduce resolution for better performance on mobile
+    viewer.scene.globe.maximumScreenSpaceError = 8; // Lower quality
+    if (viewer.scene.postProcessStages && viewer.scene.postProcessStages.fxaa) {
+        viewer.scene.postProcessStages.fxaa.enabled = false; // Disable anti-aliasing for performance
+    }
+}
+
+if (isVerySmallScreen) {
+    viewer.resolutionScale = 0.3; // Even lower for very small screens
+    viewer.scene.globe.maximumScreenSpaceError = 16;
+}
+
 const handler = viewer.cesiumWidget.screenSpaceEventHandler;
 
 handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
@@ -221,18 +239,12 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
         });
     });
 
-    function adjustForOrientation() {
-        const isPortrait = window.innerHeight > window.innerWidth;
-        const isSmallScreen = window.innerWidth < 768;
+    function adjustForDevice() {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
 
-        let starSize;
-        if (isSmallScreen) {
-            starSize = 80;
-        } else if (isPortrait) {
-            starSize = 64;
-        } else {
-            starSize = 32;
-        }
+        // Calculate star size based on screen width (larger on smaller screens)
+        let starSize = Math.max(32, Math.min(100, screenWidth / 10));
 
         points.forEach(entity => {
             entity.billboard.width = starSize;
@@ -240,21 +252,22 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
         });
 
         const label = document.getElementById('uiLabel');
-        if (isSmallScreen) {
-            label.style.minWidth = '90%';
+        if (isVerySmallScreen) {
+            label.style.width = '50%'; // Half screen width for very small phones
+            label.style.fontSize = '24px';
+            label.style.padding = '25px 30px';
+        } else if (isSmallScreen) {
+            label.style.width = '80%';
             label.style.fontSize = '20px';
             label.style.padding = '20px 25px';
-        } else if (isPortrait) {
-            label.style.minWidth = '458px';
-            label.style.fontSize = '25px';
-            label.style.padding = '18px 23px';
         } else {
+            label.style.width = 'auto';
             label.style.minWidth = '229px';
             label.style.fontSize = '16px';
             label.style.padding = '9px 14px';
         }
     }
 
-    adjustForOrientation();
-    window.addEventListener('resize', adjustForOrientation);
+    adjustForDevice();
+    window.addEventListener('resize', adjustForDevice);
 });
