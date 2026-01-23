@@ -5,6 +5,13 @@
 // - obrazki "star.png" i "arrow.png" dostępne
 // -----------------------------
 
+const Z_INDEX = {
+    ARROW_NORMAL: 10,
+    BOX: 20,
+    ARROW_ACTIVE: 30
+};
+
+
 function loadMarathonsFromURL(url, callback) {
     fetch(url)
         .then(response => {
@@ -169,6 +176,8 @@ scene.screenSpaceCameraController.minimumZoomDistance = 1000000;
 scene.screenSpaceCameraController.maximumZoomDistance = 8571000 * 2;
 
 const label = document.getElementById('uiLabel');
+label.style.position = 'absolute';
+label.style.zIndex = Z_INDEX.BOX;
 const labelText = document.getElementById('labelText');
 const closeBtn = document.getElementById('closeBtn');
 let activeEntity = null;
@@ -176,6 +185,7 @@ let activeEntity = null;
 function hideOverlay() {
     activeEntity = null;
     label.style.display = 'none';
+    updateArrowPriority(null);
 }
 closeBtn.addEventListener('click', hideOverlay);
 
@@ -205,7 +215,8 @@ loadMarathonsFromURL("marathons.txt", function (marathonPoints) {
         entity.arrowDiv = document.createElement('div');
         entity.arrowDiv.className = 'arrowIndicator';
         entity.arrowDiv.style.position = 'absolute';
-        entity.arrowDiv.style.zIndex = '1001';
+        entity.arrowDiv.style.zIndex = Z_INDEX.ARROW_NORMAL;
+        entity.arrowDiv.style.opacity = '1';
         entity.arrowDiv.style.width = arrowSizeNum + 'px';
         entity.arrowDiv.style.height = arrowSizeNum + 'px';
         entity.arrowDiv.style.padding = '6px';
@@ -223,6 +234,7 @@ loadMarathonsFromURL("marathons.txt", function (marathonPoints) {
             const ent = this.entity;
             // set active to this entity so overlay will attach to arrow if star not visible
             activeEntity = ent;
+            updateArrowPriority(activeEntity);
             // also fly to the star (but don't hide overlay)
             viewer.camera.flyTo({
                 destination: Cesium.Cartesian3.fromDegrees(ent.data.lon, ent.data.lat, scene.screenSpaceCameraController.minimumZoomDistance),
@@ -236,6 +248,20 @@ loadMarathonsFromURL("marathons.txt", function (marathonPoints) {
         return entity;
     });
 
+    function updateArrowPriority(activeEntity) {
+        points.forEach(p => {
+            if (p === activeEntity) {
+                p.arrowDiv.style.zIndex = Z_INDEX.ARROW_ACTIVE;
+                p.arrowDiv.style.opacity = '0.45';   // 👈 pół-przezroczysta
+                p.arrowDiv.style.pointerEvents = 'auto';
+            } else {
+                p.arrowDiv.style.zIndex = Z_INDEX.ARROW_NORMAL;
+                p.arrowDiv.style.opacity = '1';
+                p.arrowDiv.style.pointerEvents = 'auto';
+            }
+        });
+    }
+
     // Click on globe/star
     const clickHandler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
     clickHandler.setInputAction(function (click) {
@@ -246,6 +272,7 @@ loadMarathonsFromURL("marathons.txt", function (marathonPoints) {
             if (entity.clickState === 0) {
                 entity.clickState = 1;
                 activeEntity = entity;
+                updateArrowPriority(activeEntity);
                 points.forEach(p => { if (p !== entity) p.clickState = 0; });
             } else {
                 viewer.camera.flyTo({
@@ -258,6 +285,7 @@ loadMarathonsFromURL("marathons.txt", function (marathonPoints) {
                 });
                 entity.clickState = 0;
                 activeEntity = entity;
+                updateArrowPriority(activeEntity);
             }
         } else {
             hideOverlay();

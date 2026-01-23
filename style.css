@@ -56,7 +56,13 @@ html, body { margin: 0; padding: 0; overflow: hidden; width: 100vw; height: 100v
     max-width: 90%;
     z-index: 1000;
 }
+.arrowIndicator {
+  pointer-events: auto;
+}
 
+#uiLabel {
+  pointer-events: auto;
+}
 /* Responsive adjustments */
 @media (max-width: 768px) {
     #uiLabel {
@@ -88,4 +94,10 @@ html, body { margin: 0; padding: 0; overflow: hidden; width: 100vw; height: 100v
     #uiLabel ul li {
         margin-bottom: 6px;
     }
+}
+
+#cesiumContainer {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate; /* 🔥 NAJWAŻNIEJSZE */
 }
