@@ -290,8 +290,8 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                 // Get screen position of the hidden point (even if behind)
                 const screenPos = scene.cartesianToCanvasCoordinates(pos);
                 if (screenPos) {
-                    const canvasWidth = window.innerWidth;
-                    const canvasHeight = window.innerHeight;
+                    const canvasWidth = scene.canvas.width;
+                    const canvasHeight = scene.canvas.height;
                     const centerX = canvasWidth / 2;
                     const centerY = canvasHeight / 2;
                     const dx = screenPos.x - centerX;
