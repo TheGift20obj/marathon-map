@@ -264,13 +264,13 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                 const popupHeight = popup.offsetHeight;
                 const padding = 10;
 
-                if (x + popupWidth > window.innerWidth - padding) {
-                    x = window.innerWidth - popupWidth - padding;
+                if (x + popupWidth > document.documentElement.clientWidth - padding) {
+                    x = document.documentElement.clientWidth - popupWidth - padding;
                 }
                 if (x < padding) x = padding;
 
-                if (y + popupHeight > window.innerHeight - padding) {
-                    y = window.innerHeight - popupHeight - padding;
+                if (y + popupHeight > document.documentElement.clientHeight - padding) {
+                    y = document.documentElement.clientHeight - popupHeight - padding;
                 }
                 if (y < padding) y = padding;
 
@@ -292,8 +292,8 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                 const screenPos = scene.cartesianToCanvasCoordinates(pos);
                 if (screenPos) {
                     const DPR = window.devicePixelRatio || 1;
-                    const canvasWidth = window.innerWidth;
-                    const canvasHeight = window.innerHeight;
+                    const canvasWidth = document.documentElement.clientWidth;
+                    const canvasHeight = document.documentElement.clientHeight;
                     const centerX = canvasWidth / 2;
                     const centerY = canvasHeight / 2;
                     const screenPosCSS = { x: screenPos.x / DPR, y: screenPos.y / DPR };
@@ -355,8 +355,8 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                 const screenPos = scene.cartesianToCanvasCoordinates(pos);
                 if (screenPos) {
                     const screenPosCSS = { x: screenPos.x / DPR, y: screenPos.y / DPR };
-                    const canvasWidth = window.innerWidth;
-                    const canvasHeight = window.innerHeight;
+                    const canvasWidth = document.documentElement.clientWidth;
+                    const canvasHeight = document.documentElement.clientHeight;
                     if (screenPosCSS.x < 0 || screenPosCSS.x > canvasWidth || screenPosCSS.y < 0 || screenPosCSS.y > canvasHeight) {
                         const centerX = canvasWidth / 2;
                         const centerY = canvasHeight / 2;
@@ -397,8 +397,8 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
     });
 
     function adjustForDevice() {
-        const screenWidth = window.innerWidth;
-        const screenHeight = window.innerHeight;
+        const screenWidth = document.documentElement.clientWidth;
+        const screenHeight = document.documentElement.clientHeight;
 
         // Calculate star size based on screen width (larger on smaller screens)
         let starSize;
