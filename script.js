@@ -41,6 +41,7 @@ function loadMarathonsFromURL(url, callback) {
 const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|webOS/i.test(navigator.userAgent);
 const isSmallScreen = window.innerWidth < 1024; // Increased threshold
 const isVerySmallScreen = window.innerWidth < 480;
+const screenWidth = window.innerWidth;
 
 const viewer = new Cesium.Viewer('cesiumContainer', {
     terrainProvider: new Cesium.EllipsoidTerrainProvider(),
@@ -402,6 +403,9 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
         points.forEach(entity => {
             entity.billboard.width = starSize;
             entity.billboard.height = starSize;
+            // Update arrow size
+            entity.arrowDiv.style.width = starSize + 'px';
+            entity.arrowDiv.style.height = starSize + 'px';
         });
 
         const label = document.getElementById('uiLabel');
