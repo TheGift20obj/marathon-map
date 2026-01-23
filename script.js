@@ -240,7 +240,7 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
     viewer.scene.preRender.addEventListener(() => {
-        const DPR = window.devicePixelRatio || 1;
+        const DPR = 1;//window.devicePixelRatio || 1;
         if (activeEntity) {
             const pos = activeEntity.position.getValue(Cesium.JulianDate.now());
             const windowPos = scene.cartesianToCanvasCoordinates(pos);
