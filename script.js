@@ -292,8 +292,9 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                 const screenPos = scene.cartesianToCanvasCoordinates(pos);
                 if (screenPos) {
                     const DPR = window.devicePixelRatio || 1;
-                    const canvasWidth = document.documentElement.clientWidth * DPR;
-                    const canvasHeight = document.documentElement.clientHeight * DPR;
+                    console.log('DPR:', DPR);
+                    const canvasWidth = document.documentElement.clientWidth / DPR;
+                    const canvasHeight = document.documentElement.clientHeight / DPR;
                     const centerX = canvasWidth / 2;
                     const centerY = canvasHeight / 2;
                     const screenPosCSS = screenPos;
@@ -333,8 +334,8 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                         if (distStar < distArrow) {
                             rotAngle += 180;
                         }
-                        let leftPos = finalX - (arrowSizeNum * DPR) / 2;
-                        let topPos = finalY - (arrowSizeNum * DPR) / 2;
+                        let leftPos = finalX - (arrowSizeNum / DPR) / 2;
+                        let topPos = finalY - (arrowSizeNum / DPR) / 2;
                         // Clamp to keep fully visible
                         let leftPosCSS = leftPos / DPR;
                         let topPosCSS = topPos / DPR;
