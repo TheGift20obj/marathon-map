@@ -45,6 +45,12 @@ html, body, #cesiumContainer { width:100%; height:100%; margin:0; padding:0; }
   margin-bottom: 4px;
 }
 
+.arrowIndicator {
+    top: 10px;
+    max-width: 90%;
+    z-index: 1000;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     #uiLabel {

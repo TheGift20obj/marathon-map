@@ -123,7 +123,11 @@ const occluder = new Cesium.EllipsoidalOccluder(
 function getBearing(position, camera) {
     const direction = Cesium.Cartesian3.subtract(position, camera.position, new Cesium.Cartesian3());
     Cesium.Cartesian3.normalize(direction, direction);
-    return Math.atan2(direction.y, direction.x);
+    // Transform to camera space
+    const cameraDirection = new Cesium.Cartesian3();
+    Cesium.Matrix4.multiplyByPointAsVector(camera.viewMatrix, direction, cameraDirection);
+    // Bearing in screen space
+    return Math.atan2(cameraDirection.y, cameraDirection.x);
 }
 
 function getScreenEdgePosition(bearing, canvas) {
@@ -131,11 +135,11 @@ function getScreenEdgePosition(bearing, canvas) {
     const centerY = canvas.height / 2;
     const dx = Math.cos(bearing);
     const dy = Math.sin(bearing);
-    let t = 1;
+    let t = Infinity;
     if (dx > 0) t = Math.min(t, (canvas.width - centerX) / dx);
-    else if (dx < 0) t = Math.min(t, (0 - centerX) / dx);
+    if (dx < 0) t = Math.min(t, (0 - centerX) / dx);
     if (dy > 0) t = Math.min(t, (canvas.height - centerY) / dy);
-    else if (dy < 0) t = Math.min(t, (0 - centerY) / dy);
+    if (dy < 0) t = Math.min(t, (0 - centerY) / dy);
     const screenX = centerX + t * dx;
     const screenY = centerY + t * dy;
     return { x: screenX, y: screenY };
@@ -160,6 +164,8 @@ closeBtn.addEventListener('click', hideOverlay);
 
 loadMarathonsFromURL("marathons.txt", function(marathonPoints){
 
+    const arrowSizeNum = isSmallScreen ? 60 : 40;
+
     const points = marathonPoints.map(p => {
         const entity = viewer.entities.add({
             position: Cesium.Cartesian3.fromDegrees(p.lon, p.lat, 1),
@@ -175,13 +181,28 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
 
         // Create arrow div for off-screen indication
         entity.arrowDiv = document.createElement('div');
-        entity.arrowDiv.style.position = 'absolute';
+        entity.arrowDiv.className = 'arrowIndicator';
+        entity.arrowDiv.style.position = 'fixed';
         entity.arrowDiv.style.zIndex = '1001';
-        entity.arrowDiv.style.fontSize = isSmallScreen ? '40px' : '24px';
-        entity.arrowDiv.style.color = 'white';
-        entity.arrowDiv.innerHTML = '→';
+        entity.arrowDiv.style.width = arrowSizeNum + 'px';
+        entity.arrowDiv.style.height = arrowSizeNum + 'px';
+        entity.arrowDiv.style.padding = '8px 12px';
+        entity.arrowDiv.innerHTML = '<img src="arrow.png" style="width:100%; height:100%; object-fit:contain;">';
         entity.arrowDiv.style.display = 'none';
-        entity.arrowDiv.style.pointerEvents = 'none';
+        entity.arrowDiv.style.pointerEvents = 'auto'; // Enable clicks
+        entity.arrowDiv.entity = entity; // Store reference
+        entity.arrowDiv.addEventListener('click', function() {
+            const ent = this.entity;
+            viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(ent.data.lon, ent.data.lat, scene.screenSpaceCameraController.minimumZoomDistance),
+                duration: 1.5
+            });
+            // Hide active label if any
+            if (activeEntity) {
+                activeEntity = null;
+                label.style.display = 'none';
+            }
+        });
         document.body.appendChild(entity.arrowDiv);
 
         return entity;
@@ -265,14 +286,103 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
             const visible = occluder.isPointVisible(pos);
             entity.billboard.show = visible;
             if (!visible) {
-                const bearing = getBearing(pos, viewer.camera);
-                const edgePos = getScreenEdgePosition(bearing, scene.canvas);
-                entity.arrowDiv.style.left = (edgePos.x - 10) + 'px';
-                entity.arrowDiv.style.top = (edgePos.y - 10) + 'px';
-                entity.arrowDiv.style.transform = `rotate(${(bearing * 180 / Math.PI)}deg)`;
-                entity.arrowDiv.style.display = 'block';
+                // Get screen position of the hidden point (even if behind)
+                const screenPos = scene.cartesianToCanvasCoordinates(pos);
+                if (screenPos) {
+                    const canvasWidth = window.innerWidth;
+                    const canvasHeight = window.innerHeight;
+                    const centerX = canvasWidth / 2;
+                    const centerY = canvasHeight / 2;
+                    const dx = screenPos.x - centerX;
+                    const dy = screenPos.y - centerY;
+                    const len = Math.sqrt(dx * dx + dy * dy);
+                    if (len > 0) {
+                        const nx = dx / len;
+                        const ny = dy / len;
+                        // Calculate apparent radius of the globe
+                        const d = Cesium.Cartesian3.distance(viewer.camera.positionWC, Cesium.Cartesian3.ZERO);
+                        const radius = ellipsoid.maximumRadius;
+                        const theta = Math.asin(radius / d);
+                        const fovy = viewer.camera.frustum.fovy;
+                        const pixelPerRad = canvasHeight / fovy;
+                        const r = theta * pixelPerRad;
+                        // Horizon position
+                        const horizonX = centerX + nx * r;
+                        const horizonY = centerY + ny * r;
+                        let finalX = horizonX;
+                        let finalY = horizonY;
+                        // Check if out of Cesium container, if so, calculate new position on edge
+                        if (finalX < 0 || finalX > canvasWidth || finalY < 0 || finalY > canvasHeight) {
+                            // Line from center to horizon position, find intersection with container edge
+                            const bearing = Math.atan2(ny, nx);
+                            const edgePos = getScreenEdgePosition(bearing, {width: canvasWidth, height: canvasHeight});
+                            finalX = edgePos.x;
+                            finalY = edgePos.y;
+                        }
+                        // Rotate towards the star
+                        const rotDx = screenPos.x - finalX;
+                        const rotDy = screenPos.y - finalY;
+                        let rotAngle = Math.atan2(rotDy, rotDx) * 180 / Math.PI;
+                        // If star position is between arrow and center, opposite direction
+                        const distArrow = Math.sqrt((finalX - centerX) ** 2 + (finalY - centerY) ** 2);
+                        const distStar = Math.sqrt((screenPos.x - centerX) ** 2 + (screenPos.y - centerY) ** 2);
+                        if (distStar < distArrow) {
+                            rotAngle += 180;
+                        }
+                        let leftPos = finalX - arrowSizeNum / 2;
+                        let topPos = finalY - arrowSizeNum / 2;
+                        // Clamp to keep fully visible
+                        if (leftPos < 0) leftPos = 0;
+                        if (leftPos + arrowSizeNum > canvasWidth) leftPos = canvasWidth - arrowSizeNum;
+                        if (topPos < 0) topPos = 0;
+                        if (topPos + arrowSizeNum > canvasHeight) topPos = canvasHeight - arrowSizeNum;
+                        entity.arrowDiv.style.left = leftPos + 'px';
+                        entity.arrowDiv.style.top = topPos + 'px';
+                        entity.arrowDiv.style.transform = `rotate(${rotAngle}deg)`;
+                        entity.arrowDiv.style.display = 'block';
+                    } else {
+                        entity.arrowDiv.style.display = 'none';
+                    }
+                } else {
+                    entity.arrowDiv.style.display = 'none';
+                }
             } else {
-                entity.arrowDiv.style.display = 'none';
+                // Check if visible but out of container
+                const screenPos = scene.cartesianToCanvasCoordinates(pos);
+                if (screenPos && (screenPos.x < 0 || screenPos.x > window.innerWidth || screenPos.y < 0 || screenPos.y > window.innerHeight)) {
+                    const canvasWidth = window.innerWidth;
+                    const canvasHeight = window.innerHeight;
+                    const centerX = canvasWidth / 2;
+                    const centerY = canvasHeight / 2;
+                    const dx = screenPos.x - centerX;
+                    const dy = screenPos.y - centerY;
+                    const len = Math.sqrt(dx * dx + dy * dy);
+                    if (len > 0) {
+                        const bearing = Math.atan2(dy, dx);
+                        const edgePos = getScreenEdgePosition(bearing, {width: canvasWidth, height: canvasHeight});
+                        const finalX = edgePos.x;
+                        const finalY = edgePos.y;
+                        // Rotate towards the star
+                        const rotDx = screenPos.x - finalX;
+                        const rotDy = screenPos.y - finalY;
+                        const rotAngle = Math.atan2(rotDy, rotDx) * 180 / Math.PI;
+                        let leftPos = finalX - arrowSizeNum / 2;
+                        let topPos = finalY - arrowSizeNum / 2;
+                        // Clamp to keep fully visible
+                        if (leftPos < 0) leftPos = 0;
+                        if (leftPos + arrowSizeNum > canvasWidth) leftPos = canvasWidth - arrowSizeNum;
+                        if (topPos < 0) topPos = 0;
+                        if (topPos + arrowSizeNum > canvasHeight) topPos = canvasHeight - arrowSizeNum;
+                        entity.arrowDiv.style.left = leftPos + 'px';
+                        entity.arrowDiv.style.top = topPos + 'px';
+                        entity.arrowDiv.style.transform = `rotate(${rotAngle}deg)`;
+                        entity.arrowDiv.style.display = 'block';
+                    } else {
+                        entity.arrowDiv.style.display = 'none';
+                    }
+                } else {
+                    entity.arrowDiv.style.display = 'none';
+                }
             }
         });
     });
