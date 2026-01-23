@@ -340,8 +340,8 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                         if (leftPos + arrowSizeNum > canvasWidth) leftPos = canvasWidth - arrowSizeNum;
                         if (topPos < 0) topPos = 0;
                         if (topPos + arrowSizeNum > canvasHeight) topPos = canvasHeight - arrowSizeNum;
-                        entity.arrowDiv.style.left = leftPos + 'px';
-                        entity.arrowDiv.style.top = topPos + 'px';
+                        entity.arrowDiv.style.left = leftPos * DPR + 'px';
+                        entity.arrowDiv.style.top = topPos * DPR + 'px';
                         entity.arrowDiv.style.transform = `rotate(${rotAngle}deg)`;
                         entity.arrowDiv.style.display = 'block';
                     } else {
@@ -379,8 +379,8 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                             if (leftPos + arrowSizeNum > canvasWidth) leftPos = canvasWidth - arrowSizeNum;
                             if (topPos < 0) topPos = 0;
                             if (topPos + arrowSizeNum > canvasHeight) topPos = canvasHeight - arrowSizeNum;
-                            entity.arrowDiv.style.left = leftPos + 'px';
-                            entity.arrowDiv.style.top = topPos + 'px';
+                            entity.arrowDiv.style.left = leftPos * DPR + 'px';
+                            entity.arrowDiv.style.top = topPos * DPR + 'px';
                             entity.arrowDiv.style.transform = `rotate(${rotAngle}deg)`;
                             entity.arrowDiv.style.display = 'block';
                         } else {
