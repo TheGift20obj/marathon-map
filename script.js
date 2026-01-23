@@ -292,7 +292,7 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                 const screenPos = scene.cartesianToCanvasCoordinates(pos);
                 if (screenPos) {
                     const DPR = window.devicePixelRatio || 1;
-                    console.log('DPR:', DPR);
+                    alert("DPR: " + DPR);
                     const canvasWidth = document.documentElement.clientWidth / DPR;
                     const canvasHeight = document.documentElement.clientHeight / DPR;
                     const centerX = canvasWidth / 2;
