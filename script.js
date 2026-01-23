@@ -395,7 +395,7 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
         // Calculate star size based on screen width (larger on smaller screens)
         let starSize;
         if (isSmallScreen) {
-            starSize = screenWidth / 3.14;
+            starSize = screenWidth / 4;
         } else {
             starSize = 32;
         }
@@ -409,19 +409,26 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
         });
 
         const label = document.getElementById('uiLabel');
+        const closeBtn = document.getElementById('closeBtn');
         if (isVerySmallScreen) {
             label.style.width = '50%';
             label.style.fontSize = '80px';
             label.style.padding = '80px 85px';
+            closeBtn.style.padding = '70px 90px';
+            closeBtn.style.fontSize = '32px';
         } else if (isSmallScreen) {
-            label.style.width = '31.4%';
+            label.style.width = '50%';
             label.style.fontSize = '72px';
             label.style.padding = '70px 75px';
+            closeBtn.style.padding = '60px 80px';
+            closeBtn.style.fontSize = '28px';
         } else {
             label.style.width = 'auto';
             label.style.minWidth = '229px';
             label.style.fontSize = '16px';
             label.style.padding = '9px 14px';
+            closeBtn.style.padding = '6px 10px';
+            closeBtn.style.fontSize = '16px';
         }
     }
 
