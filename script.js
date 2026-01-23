@@ -146,7 +146,7 @@ function getScreenEdgePosition(bearing, canvas) {
     return { x: screenX, y: screenY };
 }
 
-viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(55.2708,25.2048,9000000) });
+viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(55.2708,25.2048, isSmallScreen ? 4000000 : 9000000) });
 scene.screenSpaceCameraController.minimumZoomDistance = 1000000;
 scene.screenSpaceCameraController.maximumZoomDistance = 8571000*2;
 
@@ -240,11 +240,11 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
     viewer.scene.preRender.addEventListener(() => {
+        const DPR = window.devicePixelRatio || 1;
         if (activeEntity) {
             const pos = activeEntity.position.getValue(Cesium.JulianDate.now());
             const windowPos = scene.cartesianToCanvasCoordinates(pos);
             if (windowPos) {
-                const DPR = window.devicePixelRatio || 1;
                 const labelHeader = document.getElementById('labelHeader');
                 labelHeader.innerHTML = `${activeEntity.data.country}: ${activeEntity.data.city}`;
 
@@ -353,34 +353,39 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
             } else {
                 // Check if visible but out of container
                 const screenPos = scene.cartesianToCanvasCoordinates(pos);
-                if (screenPos && (screenPos.x < 0 || screenPos.x > window.innerWidth || screenPos.y < 0 || screenPos.y > window.innerHeight)) {
+                if (screenPos) {
+                    const screenPosCSS = { x: screenPos.x / DPR, y: screenPos.y / DPR };
                     const canvasWidth = window.innerWidth;
                     const canvasHeight = window.innerHeight;
-                    const centerX = canvasWidth / 2;
-                    const centerY = canvasHeight / 2;
-                    const dx = screenPos.x - centerX;
-                    const dy = screenPos.y - centerY;
-                    const len = Math.sqrt(dx * dx + dy * dy);
-                    if (len > 0) {
-                        const bearing = Math.atan2(dy, dx);
-                        const edgePos = getScreenEdgePosition(bearing, {width: canvasWidth, height: canvasHeight});
-                        const finalX = edgePos.x;
-                        const finalY = edgePos.y;
-                        // Rotate towards the star
-                        const rotDx = screenPos.x - finalX;
-                        const rotDy = screenPos.y - finalY;
-                        const rotAngle = Math.atan2(rotDy, rotDx) * 180 / Math.PI;
-                        let leftPos = finalX - arrowSizeNum / 2;
-                        let topPos = finalY - arrowSizeNum / 2;
-                        // Clamp to keep fully visible
-                        if (leftPos < 0) leftPos = 0;
-                        if (leftPos + arrowSizeNum > canvasWidth) leftPos = canvasWidth - arrowSizeNum;
-                        if (topPos < 0) topPos = 0;
-                        if (topPos + arrowSizeNum > canvasHeight) topPos = canvasHeight - arrowSizeNum;
-                        entity.arrowDiv.style.left = leftPos + 'px';
-                        entity.arrowDiv.style.top = topPos + 'px';
-                        entity.arrowDiv.style.transform = `rotate(${rotAngle}deg)`;
-                        entity.arrowDiv.style.display = 'block';
+                    if (screenPosCSS.x < 0 || screenPosCSS.x > canvasWidth || screenPosCSS.y < 0 || screenPosCSS.y > canvasHeight) {
+                        const centerX = canvasWidth / 2;
+                        const centerY = canvasHeight / 2;
+                        const dx = screenPosCSS.x - centerX;
+                        const dy = screenPosCSS.y - centerY;
+                        const len = Math.sqrt(dx * dx + dy * dy);
+                        if (len > 0) {
+                            const bearing = Math.atan2(dy, dx);
+                            const edgePos = getScreenEdgePosition(bearing, {width: canvasWidth, height: canvasHeight});
+                            const finalX = edgePos.x;
+                            const finalY = edgePos.y;
+                            // Rotate towards the star
+                            const rotDx = screenPosCSS.x - finalX;
+                            const rotDy = screenPosCSS.y - finalY;
+                            const rotAngle = Math.atan2(rotDy, rotDx) * 180 / Math.PI;
+                            let leftPos = finalX - arrowSizeNum / 2;
+                            let topPos = finalY - arrowSizeNum / 2;
+                            // Clamp to keep fully visible
+                            if (leftPos < 0) leftPos = 0;
+                            if (leftPos + arrowSizeNum > canvasWidth) leftPos = canvasWidth - arrowSizeNum;
+                            if (topPos < 0) topPos = 0;
+                            if (topPos + arrowSizeNum > canvasHeight) topPos = canvasHeight - arrowSizeNum;
+                            entity.arrowDiv.style.left = leftPos + 'px';
+                            entity.arrowDiv.style.top = topPos + 'px';
+                            entity.arrowDiv.style.transform = `rotate(${rotAngle}deg)`;
+                            entity.arrowDiv.style.display = 'block';
+                        } else {
+                            entity.arrowDiv.style.display = 'none';
+                        }
                     } else {
                         entity.arrowDiv.style.display = 'none';
                     }
@@ -415,20 +420,20 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
         const closeBtn = document.getElementById('closeBtn');
         if (isVerySmallScreen) {
             label.style.width = 'auto';
-            label.style.minWidth = '229px';
-            label.style.fontSize = '16px';
-            label.style.padding = '9px 14px';
-            closeBtn.style.padding = '6px 10px';
-            closeBtn.style.marginLeft = '25px';
-            closeBtn.style.fontSize = '16px';
+            label.style.minWidth = '287px';
+            label.style.fontSize = '24px';
+            label.style.padding = '12px 18px';
+            closeBtn.style.padding = '8px 12px';
+            closeBtn.style.marginLeft = '30px';
+            closeBtn.style.fontSize = '24px';
         } else if (isSmallScreen) {
             label.style.width = 'auto';
-            label.style.minWidth = '229px';
-            label.style.fontSize = '16px';
-            label.style.padding = '9px 14px';
-            closeBtn.style.padding = '6px 10px';
-            closeBtn.style.marginLeft = '25px';
-            closeBtn.style.fontSize = '16px';
+            label.style.minWidth = '258px';
+            label.style.fontSize = '20px';
+            label.style.padding = '11px 16px';
+            closeBtn.style.padding = '7px 11px';
+            closeBtn.style.marginLeft = '27px';
+            closeBtn.style.fontSize = '20px';
         } else {
             label.style.width = 'auto';
             label.style.minWidth = '229px';
