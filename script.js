@@ -354,7 +354,8 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                 // Check if visible but out of container
                 const screenPos = scene.cartesianToCanvasCoordinates(pos);
                 if (screenPos) {
-                    const screenPosCSS = { x: screenPos.x / DPR, y: screenPos.y / DPR };
+                    let DPR = window.devicePixelRatio || 1;
+                    const screenPosCSS = { x: screenPos.x * DPR, y: screenPos.y * DPR };
                     const canvasWidth = document.documentElement.clientWidth;
                     const canvasHeight = document.documentElement.clientHeight;
                     if (screenPosCSS.x < 0 || screenPosCSS.x > canvasWidth || screenPosCSS.y < 0 || screenPosCSS.y > canvasHeight) {
