@@ -62,7 +62,7 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
 });
 
 if (isMobile || isSmallScreen) {
-    viewer.resolutionScale = 0.5; // Reduce resolution for better performance on mobile
+    viewer.resolutionScale = 1.0; // Full resolution for better quality on mobile
     viewer.scene.globe.maximumScreenSpaceError = 8; // Lower quality
     if (viewer.scene.postProcessStages && viewer.scene.postProcessStages.fxaa) {
         viewer.scene.postProcessStages.fxaa.enabled = false; // Disable anti-aliasing for performance
@@ -70,7 +70,7 @@ if (isMobile || isSmallScreen) {
 }
 
 if (isVerySmallScreen) {
-    viewer.resolutionScale = 0.3; // Even lower for very small screens
+    viewer.resolutionScale = 0.8; // Slightly reduced for very small screens
     viewer.scene.globe.maximumScreenSpaceError = 16;
 }
 
@@ -244,6 +244,7 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
             const pos = activeEntity.position.getValue(Cesium.JulianDate.now());
             const windowPos = scene.cartesianToCanvasCoordinates(pos);
             if (windowPos) {
+                const DPR = window.devicePixelRatio || 1;
                 const labelHeader = document.getElementById('labelHeader');
                 labelHeader.innerHTML = `${activeEntity.data.country}: ${activeEntity.data.city}`;
 
@@ -255,8 +256,8 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                     labelList.appendChild(li);
                 });
 
-                let x = windowPos.x;
-                let y = windowPos.y;
+                let x = windowPos.x / DPR;
+                let y = windowPos.y / DPR;
 
                 const popup = document.getElementById('uiLabel');
                 const popupWidth = popup.offsetWidth;
@@ -290,12 +291,14 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                 // Get screen position of the hidden point (even if behind)
                 const screenPos = scene.cartesianToCanvasCoordinates(pos);
                 if (screenPos) {
-                    const canvasWidth = scene.canvas.width;
-                    const canvasHeight = scene.canvas.height;
+                    const DPR = window.devicePixelRatio || 1;
+                    const canvasWidth = window.innerWidth;
+                    const canvasHeight = window.innerHeight;
                     const centerX = canvasWidth / 2;
                     const centerY = canvasHeight / 2;
-                    const dx = screenPos.x - centerX;
-                    const dy = screenPos.y - centerY;
+                    const screenPosCSS = { x: screenPos.x / DPR, y: screenPos.y / DPR };
+                    const dx = screenPosCSS.x - centerX;
+                    const dy = screenPosCSS.y - centerY;
                     const len = Math.sqrt(dx * dx + dy * dy);
                     if (len > 0) {
                         const nx = dx / len;
@@ -321,12 +324,12 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                             finalY = edgePos.y;
                         }
                         // Rotate towards the star
-                        const rotDx = screenPos.x - finalX;
-                        const rotDy = screenPos.y - finalY;
+                        const rotDx = screenPosCSS.x - finalX;
+                        const rotDy = screenPosCSS.y - finalY;
                         let rotAngle = Math.atan2(rotDy, rotDx) * 180 / Math.PI;
                         // If star position is between arrow and center, opposite direction
                         const distArrow = Math.sqrt((finalX - centerX) ** 2 + (finalY - centerY) ** 2);
-                        const distStar = Math.sqrt((screenPos.x - centerX) ** 2 + (screenPos.y - centerY) ** 2);
+                        const distStar = Math.sqrt((screenPosCSS.x - centerX) ** 2 + (screenPosCSS.y - centerY) ** 2);
                         if (distStar < distArrow) {
                             rotAngle += 180;
                         }
