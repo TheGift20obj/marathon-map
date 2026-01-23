@@ -241,6 +241,8 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
 
     viewer.scene.preRender.addEventListener(() => {
         const DPR = window.devicePixelRatio || 1;
+        const canvasWidth = window.visualViewport ? window.visualViewport.width : document.documentElement.clientWidth;
+        const canvasHeight = window.visualViewport ? window.visualViewport.height : document.documentElement.clientHeight;
         if (activeEntity) {
             const pos = activeEntity.position.getValue(Cesium.JulianDate.now());
             const windowPos = scene.cartesianToCanvasCoordinates(pos);
@@ -264,13 +266,13 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                 const popupHeight = popup.offsetHeight;
                 const padding = 10;
 
-                if (x + popupWidth > document.documentElement.clientWidth - padding) {
-                    x = document.documentElement.clientWidth - popupWidth - padding;
+                if (x + popupWidth > canvasWidth - padding) {
+                    x = canvasWidth - popupWidth - padding;
                 }
                 if (x < padding) x = padding;
 
-                if (y + popupHeight > document.documentElement.clientHeight - padding) {
-                    y = document.documentElement.clientHeight - popupHeight - padding;
+                if (y + popupHeight > canvasHeight - padding) {
+                    y = canvasHeight - popupHeight - padding;
                 }
                 if (y < padding) y = padding;
 
@@ -291,12 +293,10 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                 // Get screen position of the hidden point (even if behind)
                 const screenPos = scene.cartesianToCanvasCoordinates(pos);
                 if (screenPos) {
-                    const DPR = window.devicePixelRatio || 1;
-                    const canvasWidth = document.documentElement.clientWidth;
-                    const canvasHeight = document.documentElement.clientHeight;
+
                     const centerX = canvasWidth / 2;
                     const centerY = canvasHeight / 2;
-                    const screenPosCSS = { x: screenPos.x * DPR, y: screenPos.y * DPR };
+                    const screenPosCSS = { x: screenPos.x, y: screenPos.y };
                     const dx = screenPosCSS.x - centerX;
                     const dy = screenPosCSS.y - centerY;
                     const len = Math.sqrt(dx * dx + dy * dy);
@@ -354,9 +354,8 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                 // Check if visible but out of container
                 const screenPos = scene.cartesianToCanvasCoordinates(pos);
                 if (screenPos) {
-                    const screenPosCSS = { x: screenPos.x * DPR, y: screenPos.y * DPR };
-                    const canvasWidth = document.documentElement.clientWidth;
-                    const canvasHeight = document.documentElement.clientHeight;
+                    const screenPosCSS = { x: screenPos.x, y: screenPos.y };
+
                     if (screenPosCSS.x < 0 || screenPosCSS.x > canvasWidth || screenPosCSS.y < 0 || screenPosCSS.y > canvasHeight) {
                         const centerX = canvasWidth / 2;
                         const centerY = canvasHeight / 2;
