@@ -240,7 +240,7 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
     viewer.scene.preRender.addEventListener(() => {
-        const DPR = 1;//window.devicePixelRatio || 1;
+        const DPR = window.devicePixelRatio || 1;
         if (activeEntity) {
             const pos = activeEntity.position.getValue(Cesium.JulianDate.now());
             const windowPos = scene.cartesianToCanvasCoordinates(pos);
@@ -292,12 +292,12 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                 const screenPos = scene.cartesianToCanvasCoordinates(pos);
                 if (screenPos) {
                     const DPR = window.devicePixelRatio || 1;
-                    alert("DPR: " + DPR);
-                    const canvasWidth = document.documentElement.clientWidth / DPR;
-                    const canvasHeight = document.documentElement.clientHeight / DPR;
+                    //alert("DPR: " + DPR);
+                    const canvasWidth = document.documentElement.clientWidth;
+                    const canvasHeight = document.documentElement.clientHeight;
                     const centerX = canvasWidth / 2;
                     const centerY = canvasHeight / 2;
-                    const screenPosCSS = screenPos;
+                    const screenPosCSS = { x: screenPos.x / DPR, y: screenPos.y / DPR };
                     const dx = screenPosCSS.x - centerX;
                     const dy = screenPosCSS.y - centerY;
                     const len = Math.sqrt(dx * dx + dy * dy);
@@ -334,17 +334,15 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                         if (distStar < distArrow) {
                             rotAngle += 180;
                         }
-                        let leftPos = finalX - (arrowSizeNum / DPR) / 2;
-                        let topPos = finalY - (arrowSizeNum / DPR) / 2;
+                        let leftPos = finalX - arrowSizeNum / 2;
+                        let topPos = finalY - arrowSizeNum / 2;
                         // Clamp to keep fully visible
-                        let leftPosCSS = leftPos / DPR;
-                        let topPosCSS = topPos / DPR;
-                        if (leftPosCSS < 0) leftPosCSS = 0;
-                        if (leftPosCSS + arrowSizeNum > document.documentElement.clientWidth) leftPosCSS = document.documentElement.clientWidth - arrowSizeNum;
-                        if (topPosCSS < 0) topPosCSS = 0;
-                        if (topPosCSS + arrowSizeNum > document.documentElement.clientHeight) topPosCSS = document.documentElement.clientHeight - arrowSizeNum;
-                        entity.arrowDiv.style.left = leftPosCSS + 'px';
-                        entity.arrowDiv.style.top = topPosCSS + 'px';
+                        if (leftPos < 0) leftPos = 0;
+                        if (leftPos + arrowSizeNum > canvasWidth) leftPos = canvasWidth - arrowSizeNum;
+                        if (topPos < 0) topPos = 0;
+                        if (topPos + arrowSizeNum > canvasHeight) topPos = canvasHeight - arrowSizeNum;
+                        entity.arrowDiv.style.left = leftPos + 'px';
+                        entity.arrowDiv.style.top = topPos + 'px';
                         entity.arrowDiv.style.transform = `rotate(${rotAngle}deg)`;
                         entity.arrowDiv.style.display = 'block';
                     } else {
