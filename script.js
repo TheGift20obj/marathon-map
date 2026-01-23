@@ -256,8 +256,8 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                     labelList.appendChild(li);
                 });
 
-                let x = windowPos.x / DPR;
-                let y = windowPos.y / DPR;
+                let x = windowPos.x;
+                let y = windowPos.y;
 
                 const popup = document.getElementById('uiLabel');
                 const popupWidth = popup.offsetWidth;
@@ -291,12 +291,12 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                 // Get screen position of the hidden point (even if behind)
                 const screenPos = scene.cartesianToCanvasCoordinates(pos);
                 if (screenPos) {
-                    const DPR = 1;//window.devicePixelRatio || 1;
-                    const canvasWidth = document.documentElement.clientWidth;
-                    const canvasHeight = document.documentElement.clientHeight;
+                    const DPR = window.devicePixelRatio || 1;
+                    const canvasWidth = document.documentElement.clientWidth * DPR;
+                    const canvasHeight = document.documentElement.clientHeight * DPR;
                     const centerX = canvasWidth / 2;
                     const centerY = canvasHeight / 2;
-                    const screenPosCSS = { x: screenPos.x / DPR, y: screenPos.y / DPR };
+                    const screenPosCSS = screenPos;
                     const dx = screenPosCSS.x - centerX;
                     const dy = screenPosCSS.y - centerY;
                     const len = Math.sqrt(dx * dx + dy * dy);
@@ -333,15 +333,17 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                         if (distStar < distArrow) {
                             rotAngle += 180;
                         }
-                        let leftPos = finalX - arrowSizeNum / 2;
-                        let topPos = finalY - arrowSizeNum / 2;
+                        let leftPos = finalX - (arrowSizeNum * DPR) / 2;
+                        let topPos = finalY - (arrowSizeNum * DPR) / 2;
                         // Clamp to keep fully visible
-                        if (leftPos < 0) leftPos = 0;
-                        if (leftPos + arrowSizeNum > canvasWidth) leftPos = canvasWidth - arrowSizeNum;
-                        if (topPos < 0) topPos = 0;
-                        if (topPos + arrowSizeNum > canvasHeight) topPos = canvasHeight - arrowSizeNum;
-                        entity.arrowDiv.style.left = leftPos + 'px';
-                        entity.arrowDiv.style.top = topPos + 'px';
+                        let leftPosCSS = leftPos / DPR;
+                        let topPosCSS = topPos / DPR;
+                        if (leftPosCSS < 0) leftPosCSS = 0;
+                        if (leftPosCSS + arrowSizeNum > document.documentElement.clientWidth) leftPosCSS = document.documentElement.clientWidth - arrowSizeNum;
+                        if (topPosCSS < 0) topPosCSS = 0;
+                        if (topPosCSS + arrowSizeNum > document.documentElement.clientHeight) topPosCSS = document.documentElement.clientHeight - arrowSizeNum;
+                        entity.arrowDiv.style.left = leftPosCSS + 'px';
+                        entity.arrowDiv.style.top = topPosCSS + 'px';
                         entity.arrowDiv.style.transform = `rotate(${rotAngle}deg)`;
                         entity.arrowDiv.style.display = 'block';
                     } else {
@@ -354,9 +356,9 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                 // Check if visible but out of container
                 const screenPos = scene.cartesianToCanvasCoordinates(pos);
                 if (screenPos) {
-                    const screenPosCSS = { x: screenPos.x / DPR, y: screenPos.y / DPR };
-                    const canvasWidth = document.documentElement.clientWidth;
-                    const canvasHeight = document.documentElement.clientHeight;
+                    const screenPosCSS = screenPos;
+                    const canvasWidth = document.documentElement.clientWidth * DPR;
+                    const canvasHeight = document.documentElement.clientHeight * DPR;
                     if (screenPosCSS.x < 0 || screenPosCSS.x > canvasWidth || screenPosCSS.y < 0 || screenPosCSS.y > canvasHeight) {
                         const centerX = canvasWidth / 2;
                         const centerY = canvasHeight / 2;
@@ -372,15 +374,17 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                             const rotDx = screenPosCSS.x - finalX;
                             const rotDy = screenPosCSS.y - finalY;
                             const rotAngle = Math.atan2(rotDy, rotDx) * 180 / Math.PI;
-                            let leftPos = finalX - arrowSizeNum / 2;
-                            let topPos = finalY - arrowSizeNum / 2;
+                            let leftPos = finalX - (arrowSizeNum * DPR) / 2;
+                            let topPos = finalY - (arrowSizeNum * DPR) / 2;
                             // Clamp to keep fully visible
-                            if (leftPos < 0) leftPos = 0;
-                            if (leftPos + arrowSizeNum > canvasWidth) leftPos = canvasWidth - arrowSizeNum;
-                            if (topPos < 0) topPos = 0;
-                            if (topPos + arrowSizeNum > canvasHeight) topPos = canvasHeight - arrowSizeNum;
-                            entity.arrowDiv.style.left = leftPos + 'px';
-                            entity.arrowDiv.style.top = topPos + 'px';
+                            let leftPosCSS = leftPos / DPR;
+                            let topPosCSS = topPos / DPR;
+                            if (leftPosCSS < 0) leftPosCSS = 0;
+                            if (leftPosCSS + arrowSizeNum > document.documentElement.clientWidth) leftPosCSS = document.documentElement.clientWidth - arrowSizeNum;
+                            if (topPosCSS < 0) topPosCSS = 0;
+                            if (topPosCSS + arrowSizeNum > document.documentElement.clientHeight) topPosCSS = document.documentElement.clientHeight - arrowSizeNum;
+                            entity.arrowDiv.style.left = leftPosCSS + 'px';
+                            entity.arrowDiv.style.top = topPosCSS + 'px';
                             entity.arrowDiv.style.transform = `rotate(${rotAngle}deg)`;
                             entity.arrowDiv.style.display = 'block';
                         } else {
