@@ -43,6 +43,7 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     imageryProvider: new Cesium.OpenStreetMapImageryProvider({
         url: "https://a.tile.openstreetmap.org/"
     }),
+    sceneMode: (isMobile || isSmallScreen) ? Cesium.SceneMode.SCENE2D : Cesium.SceneMode.SCENE3D,
     baseLayerPicker: false,
     geocoder: false,
     homeButton: false,
@@ -232,11 +233,18 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
             label.style.display = 'none';
         }
 
-        occluder.cameraPosition = viewer.camera.positionWC;
-        points.forEach(entity => {
-            const pos = entity.position.getValue(Cesium.JulianDate.now());
-            entity.billboard.show = occluder.isPointVisible(pos);
-        });
+        if (viewer.scene.mode !== Cesium.SceneMode.SCENE2D) {
+            occluder.cameraPosition = viewer.camera.positionWC;
+            points.forEach(entity => {
+                const pos = entity.position.getValue(Cesium.JulianDate.now());
+                entity.billboard.show = occluder.isPointVisible(pos);
+            });
+        } else {
+            // In 2D, show all points
+            points.forEach(entity => {
+                entity.billboard.show = true;
+            });
+        }
     });
 
     function adjustForDevice() {
@@ -244,7 +252,7 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
         const screenHeight = window.innerHeight;
 
         // Calculate star size based on screen width (larger on smaller screens)
-        let starSize = Math.max(32, Math.min(100, screenWidth / 10));
+        let starSize = Math.max(50, Math.min(150, screenWidth / 6));
 
         points.forEach(entity => {
             entity.billboard.width = starSize;
@@ -253,13 +261,13 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
 
         const label = document.getElementById('uiLabel');
         if (isVerySmallScreen) {
-            label.style.width = '50%'; // Half screen width for very small phones
-            label.style.fontSize = '24px';
-            label.style.padding = '25px 30px';
+            label.style.width = '60%'; // Larger for very small phones
+            label.style.fontSize = '28px';
+            label.style.padding = '30px 35px';
         } else if (isSmallScreen) {
             label.style.width = '80%';
-            label.style.fontSize = '20px';
-            label.style.padding = '20px 25px';
+            label.style.fontSize = '22px';
+            label.style.padding = '25px 30px';
         } else {
             label.style.width = 'auto';
             label.style.minWidth = '229px';
