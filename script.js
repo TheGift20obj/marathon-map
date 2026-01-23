@@ -165,7 +165,7 @@ closeBtn.addEventListener('click', hideOverlay);
 
 loadMarathonsFromURL("marathons.txt", function(marathonPoints){
 
-const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
+const arrowSizeNum = false ? screenWidth / 2 : 40;
 
     const points = marathonPoints.map(p => {
         const entity = viewer.entities.add({
@@ -333,8 +333,8 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
                         if (distStar < distArrow) {
                             rotAngle += 180;
                         }
-                        let leftPos = finalX;// - arrowSizeNum / 2;
-                        let topPos = finalY;// - arrowSizeNum / 2;
+                        let leftPos = finalX - arrowSizeNum / 2;
+                        let topPos = finalY - arrowSizeNum / 2;
                         // Clamp to keep fully visible
                         if (leftPos < 0) leftPos = 0;
                         if (leftPos + arrowSizeNum > canvasWidth) leftPos = canvasWidth - arrowSizeNum;
