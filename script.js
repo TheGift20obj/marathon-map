@@ -48,7 +48,6 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     imageryProvider: new Cesium.OpenStreetMapImageryProvider({
         url: "https://a.tile.openstreetmap.org/"
     }),
-    sceneMode: (isMobile || isSmallScreen) ? Cesium.SceneMode.SCENE2D : Cesium.SceneMode.SCENE3D,
     baseLayerPicker: false,
     geocoder: false,
     homeButton: false,
@@ -179,8 +178,8 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
         entity.arrowDiv = document.createElement('div');
         entity.arrowDiv.style.position = 'absolute';
         entity.arrowDiv.style.zIndex = '1001';
-        entity.arrowDiv.style.fontSize = isSmallScreen ? '30px' : '20px';
-        entity.arrowDiv.style.color = 'red';
+        entity.arrowDiv.style.fontSize = isSmallScreen ? '40px' : '24px';
+        entity.arrowDiv.style.color = 'white';
         entity.arrowDiv.innerHTML = '→';
         entity.arrowDiv.style.display = 'none';
         entity.arrowDiv.style.pointerEvents = 'none';
@@ -261,30 +260,22 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
             label.style.display = 'none';
         }
 
-        if (viewer.scene.mode !== Cesium.SceneMode.SCENE2D) {
-            occluder.cameraPosition = viewer.camera.positionWC;
-            points.forEach(entity => {
-                const pos = entity.position.getValue(Cesium.JulianDate.now());
-                const visible = occluder.isPointVisible(pos);
-                entity.billboard.show = visible;
-                if (!visible) {
-                    const bearing = getBearing(pos, viewer.camera);
-                    const edgePos = getScreenEdgePosition(bearing, scene.canvas);
-                    entity.arrowDiv.style.left = edgePos.x + 'px';
-                    entity.arrowDiv.style.top = edgePos.y + 'px';
-                    entity.arrowDiv.style.transform = `rotate(${bearing}rad)`;
-                    entity.arrowDiv.style.display = 'block';
-                } else {
-                    entity.arrowDiv.style.display = 'none';
-                }
-            });
-        } else {
-            // In 2D, show all points, hide arrows
-            points.forEach(entity => {
-                entity.billboard.show = true;
+        occluder.cameraPosition = viewer.camera.positionWC;
+        points.forEach(entity => {
+            const pos = entity.position.getValue(Cesium.JulianDate.now());
+            const visible = occluder.isPointVisible(pos);
+            entity.billboard.show = visible;
+            if (!visible) {
+                const bearing = getBearing(pos, viewer.camera);
+                const edgePos = getScreenEdgePosition(bearing, scene.canvas);
+                entity.arrowDiv.style.left = (edgePos.x - 10) + 'px';
+                entity.arrowDiv.style.top = (edgePos.y - 10) + 'px';
+                entity.arrowDiv.style.transform = `rotate(${(bearing * 180 / Math.PI)}deg)`;
+                entity.arrowDiv.style.display = 'block';
+            } else {
                 entity.arrowDiv.style.display = 'none';
-            });
-        }
+            }
+        });
     });
 
     function adjustForDevice() {
@@ -292,7 +283,12 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
         const screenHeight = window.innerHeight;
 
         // Calculate star size based on screen width (larger on smaller screens)
-        let starSize = Math.max(50, Math.min(150, screenWidth / 6));
+        let starSize;
+        if (isSmallScreen) {
+            starSize = Math.max(64, screenWidth / 5);
+        } else {
+            starSize = 32;
+        }
 
         points.forEach(entity => {
             entity.billboard.width = starSize;
@@ -301,13 +297,13 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
 
         const label = document.getElementById('uiLabel');
         if (isVerySmallScreen) {
-            label.style.width = '90%'; // Larger for very small phones
+            label.style.width = '95%'; // Even larger for very small phones
+            label.style.fontSize = '48px';
+            label.style.padding = '50px 55px';
+        } else if (isSmallScreen) {
+            label.style.width = '90%';
             label.style.fontSize = '36px';
             label.style.padding = '40px 45px';
-        } else if (isSmallScreen) {
-            label.style.width = '85%';
-            label.style.fontSize = '28px';
-            label.style.padding = '30px 35px';
         } else {
             label.style.width = 'auto';
             label.style.minWidth = '229px';
