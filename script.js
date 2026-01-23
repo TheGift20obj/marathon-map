@@ -176,6 +176,7 @@ scene.screenSpaceCameraController.minimumZoomDistance = 1000000;
 scene.screenSpaceCameraController.maximumZoomDistance = 8571000 * 2;
 
 const label = document.getElementById('uiLabel');
+document.getElementById('cesiumContainer').appendChild(label);
 label.style.position = 'absolute';
 label.style.zIndex = Z_INDEX.BOX;
 const labelText = document.getElementById('labelText');
@@ -522,7 +523,7 @@ loadMarathonsFromURL("marathons.txt", function (marathonPoints) {
             label.style.minWidth = '287px';
             label.style.fontSize = '24px';
             label.style.padding = '12px 18px';
-            closeBtn.style.padding = '8px 12px';
+            closeBtn.style.padding = '10px 12px';
             closeBtn.style.marginLeft = '30px';
             closeBtn.style.fontSize = '24px';
         } else if (isSmallScreen) {
@@ -530,7 +531,7 @@ loadMarathonsFromURL("marathons.txt", function (marathonPoints) {
             label.style.minWidth = '258px';
             label.style.fontSize = '20px';
             label.style.padding = '11px 16px';
-            closeBtn.style.padding = '7px 11px';
+            closeBtn.style.padding = '8px 11px';
             closeBtn.style.marginLeft = '27px';
             closeBtn.style.fontSize = '20px';
         } else {
