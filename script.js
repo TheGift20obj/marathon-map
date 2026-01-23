@@ -414,19 +414,21 @@ const arrowSizeNum = isSmallScreen ? screenWidth / 2 : 40;
         const label = document.getElementById('uiLabel');
         const closeBtn = document.getElementById('closeBtn');
         if (isVerySmallScreen) {
-            label.style.width = '50%';
-            label.style.fontSize = '72px';
-            label.style.padding = '80px 100px';
-            closeBtn.style.padding = '70px 100px';
-            closeBtn.style.marginLeft = '30px';
-            closeBtn.style.fontSize = '32px';
+            label.style.width = 'auto';
+            label.style.minWidth = '229px';
+            label.style.fontSize = '16px';
+            label.style.padding = '9px 14px';
+            closeBtn.style.padding = '6px 10px';
+            closeBtn.style.marginLeft = '25px';
+            closeBtn.style.fontSize = '16px';
         } else if (isSmallScreen) {
-            label.style.width = '50%';
-            label.style.fontSize = '56px';
-            label.style.padding = '60px 70px';
-            closeBtn.style.padding = '50px 70px';
-            closeBtn.style.marginLeft = '27px';
-            closeBtn.style.fontSize = '24px';
+            label.style.width = 'auto';
+            label.style.minWidth = '229px';
+            label.style.fontSize = '16px';
+            label.style.padding = '9px 14px';
+            closeBtn.style.padding = '6px 10px';
+            closeBtn.style.marginLeft = '25px';
+            closeBtn.style.fontSize = '16px';
         } else {
             label.style.width = 'auto';
             label.style.minWidth = '229px';
