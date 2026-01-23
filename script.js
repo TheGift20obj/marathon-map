@@ -164,7 +164,7 @@ closeBtn.addEventListener('click', hideOverlay);
 
 loadMarathonsFromURL("marathons.txt", function(marathonPoints){
 
-    const arrowSizeNum = isSmallScreen ? 60 : 40;
+const arrowSizeNum = isSmallScreen ? 80 : 40;
 
     const points = marathonPoints.map(p => {
         const entity = viewer.entities.add({
@@ -394,7 +394,7 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
         // Calculate star size based on screen width (larger on smaller screens)
         let starSize;
         if (isSmallScreen) {
-            starSize = Math.max(64, screenWidth / 5);
+            starSize = Math.max(80, screenWidth / 3);
         } else {
             starSize = 32;
         }
@@ -407,12 +407,12 @@ loadMarathonsFromURL("marathons.txt", function(marathonPoints){
         const label = document.getElementById('uiLabel');
         if (isVerySmallScreen) {
             label.style.width = '95%'; // Even larger for very small phones
-            label.style.fontSize = '48px';
-            label.style.padding = '50px 55px';
+            label.style.fontSize = '60px';
+            label.style.padding = '60px 65px';
         } else if (isSmallScreen) {
             label.style.width = '90%';
-            label.style.fontSize = '36px';
-            label.style.padding = '40px 45px';
+            label.style.fontSize = '48px';
+            label.style.padding = '50px 55px';
         } else {
             label.style.width = 'auto';
             label.style.minWidth = '229px';
