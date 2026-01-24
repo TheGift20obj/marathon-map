@@ -393,8 +393,8 @@ loadMarathonsFromURL("marathons.txt", function (marathonPoints) {
 
                 // --- 6. Position in container ---
                 const margin = Math.max(8, Math.round(arrowSizeNum / 2));
-                const leftClamped = clamp(canvasOffsetLeft + lerpX - arrowSizeNum / 2, margin, canvasWidth - margin*2);
-                const topClamped = clamp(canvasOffsetTop + lerpY - arrowSizeNum / 2, margin, canvasHeight - margin*2);
+                const leftClamped = clamp(canvasOffsetLeft + lerpX - arrowSizeNum / 2, -margin/40, canvasWidth - margin*2);
+                const topClamped = clamp(canvasOffsetTop + lerpY - arrowSizeNum / 2, -margin/40, canvasHeight - margin*2);
 
                 entity.arrowDiv.style.left = leftClamped + 'px';
                 entity.arrowDiv.style.top = topClamped + 'px';
@@ -436,37 +436,33 @@ loadMarathonsFromURL("marathons.txt", function (marathonPoints) {
                 rotAngleDeg = 0;
             }
 
-            // ----- LERP for smooth movement -----
-            if (!entity.arrowDiv._currentX) {
+            // Sprawdźmy, czy strzałka wcześniej była widoczna
+            const arrowWasVisible = entity.arrowDiv.style.display !== 'none';
+            // jeśli to pierwsze pojawienie się strzałki, od razu ustawiamy na docelową
+            if (!arrowWasVisible) {
                 entity.arrowDiv._currentX = targetX;
                 entity.arrowDiv._currentY = targetY;
                 entity.arrowDiv._currentRot = rotAngleDeg;
+            } else {
+                // --- LERP tylko gdy strzałka już była widoczna ---
+                const lerpFactor = 0.15;
+                entity.arrowDiv._currentX += (targetX - entity.arrowDiv._currentX) * lerpFactor;
+                entity.arrowDiv._currentY += (targetY - entity.arrowDiv._currentY) * lerpFactor;
+
+                // interpolacja kąta z wrap-around 360°
+                let deltaRot = rotAngleDeg - entity.arrowDiv._currentRot;
+                if (deltaRot > 180) deltaRot -= 360;
+                if (deltaRot < -180) deltaRot += 360;
+                entity.arrowDiv._currentRot += deltaRot * lerpFactor;
             }
 
-            const lerpFactor = 0.15;
-            entity.arrowDiv._currentX += (targetX - entity.arrowDiv._currentX) * lerpFactor;
-            entity.arrowDiv._currentY += (targetY - entity.arrowDiv._currentY) * lerpFactor;
-
-            // angle interpolation with 360° wrap-around
-            let deltaRot = rotAngleDeg - entity.arrowDiv._currentRot;
-            if (deltaRot > 180) deltaRot -= 360;
-            if (deltaRot < -180) deltaRot += 360;
-            entity.arrowDiv._currentRot += deltaRot * lerpFactor;
-
+            // ustawienie pozycji w container
             const leftInContainer = canvasOffsetLeft + entity.arrowDiv._currentX - arrowSizeNum / 2;
             const topInContainer = canvasOffsetTop + entity.arrowDiv._currentY - arrowSizeNum / 2;
             const containerW = containerRect.width;
             const containerH = containerRect.height;
             const leftClamped = Math.max(0, Math.min(containerW - arrowSizeNum, leftInContainer));
             const topClamped = Math.max(0, Math.min(containerH - arrowSizeNum, topInContainer));
-
-            if (activeEntity === entity) {
-                entity.arrowDiv.style.zIndex = Z_INDEX.ARROW_ACTIVE;
-                entity.arrowDiv.style.opacity = '0.45';
-            } else {
-                entity.arrowDiv.style.zIndex = Z_INDEX.ARROW_NORMAL;
-                entity.arrowDiv.style.opacity = '1';
-            }
 
             entity.arrowDiv.style.left = leftClamped + 'px';
             entity.arrowDiv.style.top = topClamped + 'px';
