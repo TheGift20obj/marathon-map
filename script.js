@@ -183,13 +183,6 @@ const labelText = document.getElementById('labelText');
 const closeBtn = document.getElementById('closeBtn');
 let activeEntity = null;
 
-function hideOverlay() {
-    activeEntity = null;
-    label.style.display = 'none';
-    updateArrowPriority(null);
-}
-closeBtn.addEventListener('click', hideOverlay);
-
 // IMPORTANT CSS: ensure #cesiumContainer has position:relative and overflow:hidden
 // e.g. in your CSS:
 // #cesiumContainer { position: relative; overflow: hidden; }
@@ -262,6 +255,13 @@ loadMarathonsFromURL("marathons.txt", function (marathonPoints) {
             }
         });
     }
+
+    function hideOverlay() {
+        activeEntity = null;
+        label.style.display = 'none';
+        updateArrowPriority(null);
+    }
+    closeBtn.addEventListener('click', hideOverlay);
 
     // Click on globe/star
     const clickHandler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
