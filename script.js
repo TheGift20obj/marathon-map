@@ -11,6 +11,10 @@ const Z_INDEX = {
     ARROW_ACTIVE: 30
 };
 
+// Utwórz clamp (było undefined — teraz jest)
+function clamp(v, a, b) {
+    return Math.max(a, Math.min(b, v));
+}
 
 function loadMarathonsFromURL(url, callback) {
     fetch(url)
@@ -170,10 +174,21 @@ function getScreenEdgePosition(bearing, canvasSize) {
     return { x: screenX, y: screenY };
 }
 
+// Compute horizon radius (in pixels) for current camera — used to place arrows exactly on horizon
+function computeHorizonRadiusPx(canvasHeight, camera) {
+    const R = ellipsoid.maximumRadius;
+    const d = Cesium.Cartesian3.magnitude(camera.positionWC);
+    const ratio = Math.max(0.000001, Math.min(1 - 1e-8, R / d));
+    const theta = Math.asin(ratio); // angle between camera->center and tangent
+    const fovy = camera.frustum.fovy || Cesium.Math.toRadians(60);
+    const pixelPerRad = canvasHeight / fovy;
+    return theta * pixelPerRad;
+}
+
 // Initial view
 viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(55.2708, 25.2048, isSmallScreen ? 4000000 : 9000000) });
-scene.screenSpaceCameraController.minimumZoomDistance = 1000000;
-scene.screenSpaceCameraController.maximumZoomDistance = 8571000 * 2;
+scene.screenSpaceCameraController.minimumZoomDistance = 5000000;
+scene.screenSpaceCameraController.maximumZoomDistance = 8571000*1.3;
 
 const label = document.getElementById('uiLabel');
 document.getElementById('cesiumContainer').appendChild(label);
@@ -307,128 +322,156 @@ loadMarathonsFromURL("marathons.txt", function (marathonPoints) {
         // update occluder camera position
         occluder.cameraPosition = viewer.camera.positionWC;
 
+        // compute geometric horizon radius in pixels for this camera/view
+        const horizonR = computeHorizonRadiusPx(canvasHeight, viewer.camera);
+
         // Update each entity
         points.forEach(entity => {
             const pos = entity.position.getValue(Cesium.JulianDate.now());
             const visible = occluder.isPointVisible(pos);
             entity.billboard.show = visible;
 
-            // try to get canvas coords (relative to canvas)
             const canvasCoords = scene.cartesianToCanvasCoordinates(pos);
-            // convert to container coords if we have canvas coords
-            const containerCoords = canvasCoords ? { x: canvasCoords.x + canvasOffsetLeft, y: canvasCoords.y + canvasOffsetTop } : null;
 
-            // Decide if arrow must be shown:
-            let arrowShouldShow = false;
-            if (!visible) {
-                // behind globe => show arrow
-                arrowShouldShow = true;
-            } else if (!canvasCoords) {
-                // no canvas coords (odd), fall back to showing arrow
-                arrowShouldShow = true;
-            } else {
-                // visible but possibly off-canvas (outside canvas bounds)
-                if (canvasCoords.x < 0 || canvasCoords.x > canvasWidth || canvasCoords.y < 0 || canvasCoords.y > canvasHeight) {
-                    arrowShouldShow = true;
-                } else {
-                    arrowShouldShow = false;
-                }
-            }
+            const isOccluded = !visible;
+            const isOffscreen = !!canvasCoords && (canvasCoords.x < 0 || canvasCoords.x > canvasWidth || canvasCoords.y < 0 || canvasCoords.y > canvasHeight);
+            const hasProjection = !!canvasCoords;
 
+            let arrowShouldShow = isOccluded || !hasProjection || isOffscreen;
             if (!arrowShouldShow) {
                 entity.arrowDiv.style.display = 'none';
-            } else {
-                // compute final arrow position (relative to canvas)
-                let finalX, finalY; // coordinates w.r.t. canvas (0..canvasWidth/Height)
-                if (containerCoords) {
-                    // If we have a projected point (maybe offscreen), use its direction from center
-                    const centerX = canvasWidth / 2;
-                    const centerY = canvasHeight / 2;
+                return;
+            }
+
+            const centerX = canvasWidth / 2;
+            const centerY = canvasHeight / 2;
+            const tipOffset = Math.max(6, Math.round(arrowSizeNum / 2));
+
+            let targetX, targetY, rotAngleDeg;
+
+            if (isOccluded) {
+                // --- 1. Compute angle from center to star ---
+                let angleRad;
+                if (canvasCoords) {
                     const dx = canvasCoords.x - centerX;
                     const dy = canvasCoords.y - centerY;
-                    const len = Math.sqrt(dx * dx + dy * dy);
-
-                    // Apparent horizon radius calculation (keeps arrow at horizon when behind globe)
-                    const d = Cesium.Cartesian3.distance(viewer.camera.positionWC, Cesium.Cartesian3.ZERO);
-                    const radius = ellipsoid.maximumRadius;
-                    let theta = 0;
-                    if (d > radius) {
-                        theta = Math.asin(radius / d);
-                    } else {
-                        theta = Math.PI / 2;
-                    }
-                    const fovy = viewer.camera.frustum.fovy;
-                    const pixelPerRad = canvasHeight / fovy;
-                    const r = theta * pixelPerRad;
-
-                    if (len > 1e-6) {
-                        const nx = dx / len;
-                        const ny = dy / len;
-                        // horizon-centered
-                        finalX = centerX + nx * r;
-                        finalY = centerY + ny * r;
-                    } else {
-                        // directly center -> place arrow at top center
-                        finalX = centerX;
-                        finalY = centerY - r;
-                    }
-
-                    // If horizon position falls outside canvas (rare), clamp to canvas edge
-                    if (finalX < 0) finalX = 0;
-                    if (finalX > canvasWidth) finalX = canvasWidth;
-                    if (finalY < 0) finalY = 0;
-                    if (finalY > canvasHeight) finalY = canvasHeight;
+                    angleRad = Math.atan2(dy, dx);
                 } else {
-                    // no canvas coords at all (very rare) -> fallback to edge using bearing
-                    const bearing = getBearingFromCameraToPoint(pos); // in camera space
-                    const edgePos = getScreenEdgePosition(bearing, { width: canvasWidth, height: canvasHeight });
-                    finalX = edgePos.x;
-                    finalY = edgePos.y;
-                }
-
-                // Now clamp finalX/finalY to stay fully inside canvas, with margin
-                const margin = Math.max(8, Math.round(arrowSizeNum / 2));
-                if (finalX < margin) finalX = margin;
-                if (finalX > canvasWidth - margin) finalX = canvasWidth - margin;
-                if (finalY < margin) finalY = margin;
-                if (finalY > canvasHeight - margin) finalY = canvasHeight - margin;
-
-                // Compute rotation so arrow points *towards* the star's apparent canvas position (even if offscreen)
-                // We'll compute a target point to point to: prefer canvasCoords if present, otherwise approximate by center + bearing*large
-                let targetCanvasX, targetCanvasY;
-                if (containerCoords) {
-                    targetCanvasX = canvasCoords.x;
-                    targetCanvasY = canvasCoords.y;
-                } else {
-                    // fallback target: center + vector from bearing
                     const bearing = getBearingFromCameraToPoint(pos);
-                    const approx = getScreenEdgePosition(bearing, { width: canvasWidth, height: canvasHeight });
-                    targetCanvasX = approx.x;
-                    targetCanvasY = approx.y;
+                    angleRad = bearing + Math.PI; // invert
                 }
 
-                // Angle from arrow position to target (note: canvas Y grows downwards)
-                const rotDx = targetCanvasX - finalX;
-                const rotDy = targetCanvasY - finalY;
-                let rotAngleDeg = Math.atan2(rotDy, rotDx) * 180 / Math.PI;
-                // Keep in [0,360)
-                if (!isFinite(rotAngleDeg)) rotAngleDeg = 0;
+                // --- 2. Set position exactly on horizon ---
+                let finalX = centerX + Math.cos(angleRad) * horizonR;
+                let finalY = centerY + Math.sin(angleRad) * horizonR;
 
-                // Position arrowDiv relative to container (container-left/top offsets)
-                const leftInContainer = canvasOffsetLeft + finalX - arrowSizeNum / 2;
-                const topInContainer = canvasOffsetTop + finalY - arrowSizeNum / 2;
+                // --- 3. Optionally limit vertical deviation ---
+                const dy = finalY - centerY;
+                const maxVertical = horizonR * 0.9; // e.g., 90% of radius
+                if (dy > maxVertical) finalY = centerY + maxVertical;
+                if (dy < -maxVertical) finalY = centerY - maxVertical;
 
-                // Clamp to container box so arrow never leaves viewer.container
-                const containerW = containerRect.width;
-                const containerH = containerRect.height;
-                let leftClamped = Math.max(0, Math.min(containerW - arrowSizeNum, leftInContainer));
-                let topClamped = Math.max(0, Math.min(containerH - arrowSizeNum, topInContainer));
+                // --- 4. Arrow rotation toward star beyond horizon ---
+                const extra = Math.max(100, Math.round(horizonR * 0.4));
+                const rotationTargetX = centerX + Math.cos(angleRad) * (horizonR + extra);
+                const rotationTargetY = centerY + Math.sin(angleRad) * (horizonR + extra);
+                let rotAngleDeg = Math.atan2(rotationTargetY - finalY, rotationTargetX - finalX) * 180 / Math.PI;
+
+                // --- 5. Smooth LERP ---
+                entity.arrowDiv._prevX = entity.arrowDiv._prevX ?? finalX;
+                entity.arrowDiv._prevY = entity.arrowDiv._prevY ?? finalY;
+                entity.arrowDiv._prevRot = entity.arrowDiv._prevRot ?? rotAngleDeg;
+
+                const lerpFactor = 0.2;
+                const lerpX = entity.arrowDiv._prevX + (finalX - entity.arrowDiv._prevX) * lerpFactor;
+                const lerpY = entity.arrowDiv._prevY + (finalY - entity.arrowDiv._prevY) * lerpFactor;
+                const lerpRot = entity.arrowDiv._prevRot + (rotAngleDeg - entity.arrowDiv._prevRot) * lerpFactor;
+
+                entity.arrowDiv._prevX = lerpX;
+                entity.arrowDiv._prevY = lerpY;
+                entity.arrowDiv._prevRot = lerpRot;
+
+                // --- 6. Position in container ---
+                const margin = Math.max(8, Math.round(arrowSizeNum / 2));
+                const leftClamped = clamp(canvasOffsetLeft + lerpX - arrowSizeNum / 2, margin, canvasWidth - margin*2);
+                const topClamped = clamp(canvasOffsetTop + lerpY - arrowSizeNum / 2, margin, canvasHeight - margin*2);
 
                 entity.arrowDiv.style.left = leftClamped + 'px';
                 entity.arrowDiv.style.top = topClamped + 'px';
-                entity.arrowDiv.style.transform = `rotate(${rotAngleDeg}deg)`;
+                entity.arrowDiv.style.transform = `rotate(${lerpRot}deg)`;
                 entity.arrowDiv.style.display = 'block';
+            } else if (isOffscreen) {
+                const projX = canvasCoords ? canvasCoords.x : centerX;
+                const projY = canvasCoords ? canvasCoords.y : centerY;
+                const vx = projX - centerX;
+                const vy = projY - centerY;
+                const ang = Math.atan2(vy, vx);
+
+                const edgePos = getScreenEdgePosition(ang, { width: canvasWidth, height: canvasHeight });
+                targetX = clamp(edgePos.x, Math.max(8, Math.round(arrowSizeNum / 2)), canvasWidth - Math.max(8, Math.round(arrowSizeNum / 2)));
+                targetY = clamp(edgePos.y, Math.max(8, Math.round(arrowSizeNum / 2)), canvasHeight - Math.max(8, Math.round(arrowSizeNum / 2)));
+
+                const v_arrow_to_proj_x = projX - targetX;
+                const v_arrow_to_proj_y = projY - targetY;
+                const v_arrow_to_center_x = centerX - targetX;
+                const v_arrow_to_center_y = centerY - targetY;
+                const dot = v_arrow_to_proj_x * v_arrow_to_center_x + v_arrow_to_proj_y * v_arrow_to_center_y;
+                const lenProj = Math.hypot(v_arrow_to_proj_x, v_arrow_to_proj_y);
+                const lenCenter = Math.hypot(v_arrow_to_center_x, v_arrow_to_center_y);
+
+                let rotationTargetX, rotationTargetY;
+                if (lenProj > 0 && dot > 0 && lenProj < lenCenter * 0.95) {
+                    const beyond = 200;
+                    rotationTargetX = centerX + Math.cos(ang) * (Math.max(canvasWidth, canvasHeight) + beyond);
+                    rotationTargetY = centerY + Math.sin(ang) * (Math.max(canvasWidth, canvasHeight) + beyond);
+                } else {
+                    rotationTargetX = projX;
+                    rotationTargetY = projY;
+                }
+
+                rotAngleDeg = Math.atan2(rotationTargetY - targetY, rotationTargetX - targetX) * 180 / Math.PI;
+            } else {
+                targetX = clamp(canvasCoords.x, Math.max(8, Math.round(arrowSizeNum / 2)), canvasWidth - Math.max(8, Math.round(arrowSizeNum / 2)));
+                targetY = clamp(canvasCoords.y, Math.max(8, Math.round(arrowSizeNum / 2)), canvasHeight - Math.max(8, Math.round(arrowSizeNum / 2)));
+                rotAngleDeg = 0;
             }
+
+            // ----- LERP for smooth movement -----
+            if (!entity.arrowDiv._currentX) {
+                entity.arrowDiv._currentX = targetX;
+                entity.arrowDiv._currentY = targetY;
+                entity.arrowDiv._currentRot = rotAngleDeg;
+            }
+
+            const lerpFactor = 0.15;
+            entity.arrowDiv._currentX += (targetX - entity.arrowDiv._currentX) * lerpFactor;
+            entity.arrowDiv._currentY += (targetY - entity.arrowDiv._currentY) * lerpFactor;
+
+            // angle interpolation with 360° wrap-around
+            let deltaRot = rotAngleDeg - entity.arrowDiv._currentRot;
+            if (deltaRot > 180) deltaRot -= 360;
+            if (deltaRot < -180) deltaRot += 360;
+            entity.arrowDiv._currentRot += deltaRot * lerpFactor;
+
+            const leftInContainer = canvasOffsetLeft + entity.arrowDiv._currentX - arrowSizeNum / 2;
+            const topInContainer = canvasOffsetTop + entity.arrowDiv._currentY - arrowSizeNum / 2;
+            const containerW = containerRect.width;
+            const containerH = containerRect.height;
+            const leftClamped = Math.max(0, Math.min(containerW - arrowSizeNum, leftInContainer));
+            const topClamped = Math.max(0, Math.min(containerH - arrowSizeNum, topInContainer));
+
+            if (activeEntity === entity) {
+                entity.arrowDiv.style.zIndex = Z_INDEX.ARROW_ACTIVE;
+                entity.arrowDiv.style.opacity = '0.45';
+            } else {
+                entity.arrowDiv.style.zIndex = Z_INDEX.ARROW_NORMAL;
+                entity.arrowDiv.style.opacity = '1';
+            }
+
+            entity.arrowDiv.style.left = leftClamped + 'px';
+            entity.arrowDiv.style.top = topClamped + 'px';
+            entity.arrowDiv.style.transform = `rotate(${entity.arrowDiv._currentRot}deg)`;
+            entity.arrowDiv.style.display = 'block';
         });
 
         // Label positioning: if activeEntity exists, attach popup either to star (if visible/on-canvas)
