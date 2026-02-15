@@ -210,14 +210,14 @@ const starImage = createStarDataURL();
 // ---------- ADD MARKERS ----------
 marathonPoints.forEach(p=>{
     const entity = viewer.entities.add({
-        position: Cesium.Cartesian3.fromDegrees(p.lon,p.lat),
+        position: Cesium.Cartesian3.fromDegrees(p.lon,p.lat,150000),
         billboard:{
             image: starImage,
             width:64,
             height:64,
-            verticalOrigin:Cesium.VerticalOrigin.BOTTOM,
+            //verticalOrigin:Cesium.VerticalOrigin.TOP,
             scaleByDistance: new Cesium.NearFarScalar(1000000,1.5,20000000,0.8)
-        }
+        },
     });
     entity.data=p;
 });
@@ -263,6 +263,29 @@ viewer.camera.setView({
 });
 
 label.style.display='none';
+
+/*const GLOBUS_OFFSET = 100; // w metrach nad powierzchnią globu
+
+// Funkcja do ustawiania verticalOrigin / przesunięcia gwiazdki
+function updateStarPosition(billboardEntity) {
+    const camPos = viewer.camera.positionWC; // pozycja kamery
+    const globePos = billboardEntity.position.getValue(Cesium.JulianDate.now());
+
+    const dir = Cesium.Cartesian3.subtract(globePos, camPos, new Cesium.Cartesian3());
+    Cesium.Cartesian3.normalize(dir, dir);
+
+    // przesuwamy billboard wzdłuż wektora w stronę kamery
+    const offset = Cesium.Cartesian3.multiplyByScalar(dir, GLOBUS_OFFSET, new Cesium.Cartesian3());
+    billboardEntity.billboard.pixelOffset = new Cesium.Cartesian2(offset.x, offset.y);
+}
+
+viewer.scene.preRender.addEventListener(() => {
+    viewer.entities.values.forEach(e => {
+        if(e.billboard && e.data) {
+            updateStarPosition(e);
+        }
+    });
+});*/
 
 </script>
 </body>
