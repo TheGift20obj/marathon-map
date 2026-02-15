@@ -122,10 +122,87 @@ viewer.imageryLayers.addImageryProvider(
 );
 
 const scene = viewer.scene;
-scene.skyBox.show = false;
+// 1) Kolor tła sceny (za globusem)
+    viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#071230'); // głębokie granatowe tło
+
+    // 2) Atmosfera nieba - nadajemy nasycenie i przesunięcie barwy
+    scene.skyAtmosphere.show = true;
+    // hueShift: -1..1 (przesuwa barwę), saturationShift: -1..1, brightnessShift: -1..1
+    scene.skyAtmosphere.hueShift = -0.6;       // lekko w stronę fioletu/indigo
+    scene.skyAtmosphere.saturationShift = 0.45; // bardziej nasycone
+    scene.skyAtmosphere.brightnessShift = -0.02;
+
+    // 3) Włącz oświetlenie globusa (ładniejsze cieniowanie)
+    scene.globe.enableLighting = true;
+    // bazowy kolor globusa używany tam, gdzie brak kafli / jako subtelny tint
+    scene.globe.baseColor = Cesium.Color.fromCssColorString('#0b1a2b');
+
+    // 4) Usuń istniejące warstwy (opcjonalnie) i dodaj warstwy kolorystyczne:
+    try { viewer.imageryLayers.removeAll(); } catch (e) { /* safe */ }
+
+    // Warstwa 1: kolorowy efekt "malarski" (Stamen Watercolor)
+    // źródło: https://stamen.com (public tiles) - bez klucza
+    const watercolor = viewer.imageryLayers.addImageryProvider(
+        new Cesium.UrlTemplateImageryProvider({
+            url: 'https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg',
+            maximumLevel: 18,
+            credit: 'Map tiles by Stamen'
+        })
+    );
+    watercolor.alpha = 1.0; // pełna widoczność
+
+    // Warstwa 2: lekko przeźroczyste OSM dla etykiet i rysunku linii
+    const osmLabels = viewer.imageryLayers.addImageryProvider(
+        new Cesium.OpenStreetMapImageryProvider({
+            url: 'https://a.tile.openstreetmap.org/'
+        })
+    );
+    osmLabels.alpha = 0.55; // pół-przezroczyste, żeby nie przysłonić akwareli
+
+    // Warstwa 3: delikatne podbicie kontrastu (możesz wyłączyć)
+    // Tu można dodać np. hillshade albo custom overlay — zostawiłem komentarz.
+
+    // 5) Włącz słońce (dynamiczne oświetlenie) i lekko podbij cień
+    scene.sun.show = true;
+    scene.moon.show = false; // możesz włączyć jeśli chcesz efektu księżyca
+    scene.globe.dynamicAtmosphereLighting = true;
+
+    // 6) Drobne wizualne ułatwienie - delikatne cienie billboardów (opcjonalne)
+    // (uwaga: billboardy domyślnie nie rzucają cienia na globe, to tylko kosmetyka)
+
+    // 7) Funkcja do szybkiego przełączania presetów kolorystycznych
+    window.setColorStyle = function (preset) {
+        // presets: 'watercolor', 'vivid', 'dark'
+        if (preset === 'vivid') {
+            viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#081028');
+            scene.skyAtmosphere.hueShift = -0.3;
+            scene.skyAtmosphere.saturationShift = 0.7;
+            scene.globe.baseColor = Cesium.Color.fromCssColorString('#072a3a');
+            watercolor.alpha = 0.95;
+            osmLabels.alpha = 0.65;
+        } else if (preset === 'dark') {
+            viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#000814');
+            scene.skyAtmosphere.hueShift = -0.9;
+            scene.skyAtmosphere.saturationShift = 0.05;
+            scene.globe.baseColor = Cesium.Color.fromCssColorString('#001018');
+            watercolor.alpha = 0.65;
+            osmLabels.alpha = 0.45;
+        } else { // 'watercolor' (domyślny)
+            viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#071230');
+            scene.skyAtmosphere.hueShift = -0.6;
+            scene.skyAtmosphere.saturationShift = 0.45;
+            scene.globe.baseColor = Cesium.Color.fromCssColorString('#0b1a2b');
+            watercolor.alpha = 1.0;
+            osmLabels.alpha = 0.55;
+        }
+    };
+
+    // ustaw domyślny preset
+    setColorStyle('watercolor');
+/*scene.skyBox.show = false;
 scene.skyAtmosphere.show = false;
 scene.sun.show = false;
-scene.moon.show = false;
+scene.moon.show = false;*/
 
 const ellipsoid = Cesium.Ellipsoid.WGS84;
 const occluder = new Cesium.EllipsoidalOccluder(ellipsoid, viewer.camera.positionWC);

@@ -1,22 +1,269 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Plan startów w różnych krajach</title>
-<script src="https://unpkg.com/cesium/Build/Cesium/Cesium.js"></script>
-<link href="https://unpkg.com/cesium/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cesium Marathon Globe</title>
+
+<script src="https://unpkg.com/cesium@1.111.0/Build/Cesium/Cesium.js"></script>
+<link href="https://unpkg.com/cesium@1.111.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+
+<style>
+html, body, #cesiumContainer {
+    width:100%; height:100%; margin:0; padding:0;
+    overflow:hidden; background:#000814;
+}
+#cesiumContainer { position:relative; }
+
+#uiLabel {
+    position: absolute;
+    display: none;
+    background: rgba(10, 20, 40, 0.95);
+    color: white;
+    border-radius: 14px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+    z-index: 50;
+
+    /* Nowe wymiary i wyśrodkowanie */
+    width: 75vw;     /* 25% wysokości viewport */
+    left: 50%;        /* ustaw na środek poziomo */
+    bottom: 5%;         /* 25% od góry (czyli 50% od dołu do środka) */
+    transform: translateX(-50%); /* przesunięcie do faktycznego środka */
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-family: system-ui;
+    font-size: 1.5em;  /* większy tekst */
+    padding: 20px;
+}
+#uiLabel h3 { margin:0 0 8px 0; font-size:32px; }
+#uiLabel ul {
+    padding-left: 0;
+    margin: 10px 0 0 0;
+    list-style: none;
+}
+#closeBtn {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+</style>
 </head>
 <body>
+
 <div id="cesiumContainer"></div>
+
 <div id="uiLabel">
-  <div id="labelHeaderWrapper">
-    <div id="labelHeader"></div>
-    <button id="closeBtn">X</button>
-  </div>
-  <ul id="labelList" style="margin:0; padding:0; list-style:none;"></ul>
+    <div id="closeBtn">✕</div>
+    <h3 id="labelHeader"></h3>
+    <ul id="labelList"></ul>
 </div>
-<script src="script.js"></script>
+
+<script>
+
+if (typeof Cesium === "undefined") {
+    document.body.innerHTML = "<h2 style='color:white;padding:20px'>Cesium failed to load.</h2>";
+    throw new Error("Cesium is not defined");
+}
+
+Cesium.Ion.defaultAccessToken = null;
+
+// ---------- DATA ----------
+const RAW_DATA = `
+1|Zjednoczone Emiraty Arabskie|Dubai|55.2708|25.2048|marathon|01.02.2026
+2|Egipt|Kair - Saqqara|31.2167|29.8717|half marathon|13.02.2026
+3|USA|Little Rock Chalange|-92.2896|34.7465|10 km|28.02.2026
+3|USA|Little Rock Chalange|-92.2896|34.7465|marathon|01.03.2026
+4|USA|Los Angeles|-118.2437|34.0522|5 km|07.03.2026
+4|USA|Los Angeles|-118.2437|34.0522|marathon|08.03.2026
+5|Izrael|Jeruzalem|35.2137|31.7683|marathon|27.03.2026
+6|Canada|Ottawa - Chalange|-75.6972|45.4215|2 km + 5 km + 10 km|23.05.2026
+6|Canada|Ottawa - Chalange|-75.6972|45.4215|marathon|24.05.2026
+6a|RPA|Cape Town|18.4241|-33.9249|10 km|23.05.2026
+6a|RPA|Cape Town|18.4241|-33.9249|marathon|24.05.2026
+7|USA|Alaska - Anchorage|-149.9003|61.2181|marathon|20.06.2026
+8|Canada|Vancouver|-123.1207|49.2827|half marathon|28.06.2026
+`;
+
+function parseMarathons(text){
+    const lines = text.split(/\r?\n/).filter(l=>l.trim());
+    const map = new Map();
+    lines.forEach(line=>{
+        const [id,country,city,lonStr,latStr,type,date] = line.split("|");
+        const lon=parseFloat(lonStr), lat=parseFloat(latStr);
+        if(!map.has(id)){
+            map.set(id,{id,country,city,lon,lat,marathons:[]});
+        }
+        map.get(id).marathons.push({type,date});
+    });
+    return Array.from(map.values());
+}
+
+const marathonPoints = parseMarathons(RAW_DATA);
+
+// ---------- VIEWER WITH STATIC EARTH TEXTURE (NO AUTH, NO TILES) ----------
+const viewer = new Cesium.Viewer('cesiumContainer',{
+    terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+    imageryProvider: new Cesium.SingleTileImageryProvider({
+        // NASA Blue Marble style – natural globe colors
+        url: 'https://upload.wikimedia.org/wikipedia/commons/2/2c/Blue_Marble_2002.png'
+    }),
+    baseLayerPicker:false,
+    geocoder:false,
+    homeButton:false,
+    sceneModePicker:false,
+    timeline:false,
+    navigationHelpButton:false,
+    animation:false,
+    infoBox:false,
+    selectionIndicator:false
+});
+
+viewer.imageryLayers.removeAll();
+
+viewer.imageryLayers.addImageryProvider(
+    new Cesium.SingleTileImageryProvider({
+        url: 'https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57730/world.topo.bathy.200412.3x5400x2700.jpg',
+        rectangle: Cesium.Rectangle.fromDegrees(-180, -90, 180, 90)
+    })
+);
+
+// OPTIONAL:
+// półprzezroczysta nakładka OSM z etykietami:
+viewer.imageryLayers.addImageryProvider(
+    new Cesium.UrlTemplateImageryProvider({
+        url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+        subdomains: ['a','b','c'],
+        minimumLevel: 0,
+        maximumLevel: 19,
+        alpha: 0.45, // półprzezroczystość
+        credit: '© OpenStreetMap contributors'
+    })
+);
+
+Cesium.GeoJsonDataSource.load('countries2.geojson', {
+    clampToGround: false
+}).then(function(ds){
+    viewer.dataSources.add(ds);
+    ds.entities.values.forEach(e => {
+        e.polygon.material = Cesium.Color.fromRandom({ alpha: 0.6 });
+        e.polygon.outline = true;
+        e.polygon.outlineColor = Cesium.Color.BLACK;
+    });
+});
+
+/*viewer.imageryLayers.addImageryProvider(
+    new Cesium.UrlTemplateImageryProvider({
+        url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+        subdomains: ['a','b','c'],
+        minimumLevel: 0,
+        maximumLevel: 19,
+        credit: '© OpenStreetMap contributors'
+    })
+);*/
+
+viewer.scene.globe.enableLighting = true;
+viewer.scene.skyAtmosphere.show = true;
+viewer.scene.globe.atmosphereLightIntensity = 10.0;
+
+// ---------- LIMIT CAMERA CONTROLS (ONLY ZOOM + ROTATE) ----------
+const controller = viewer.scene.screenSpaceCameraController;
+controller.enableTilt = false;
+controller.enableLook = false;
+controller.enableTranslate = false; // prevents panning off globe
+viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
+    Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK
+);
+
+// ---------- STAR ICON (BIGGER + GLOW) ----------
+function createStarDataURL(){
+    const canvas=document.createElement('canvas');
+    canvas.width=128;
+    canvas.height=128;
+    const ctx=canvas.getContext('2d');
+
+    ctx.translate(64,64);
+    ctx.beginPath();
+    for(let i=0;i<5;i++){
+        ctx.lineTo(0,-40);
+        ctx.rotate(Math.PI/5);
+        ctx.lineTo(0,-18);
+        ctx.rotate(Math.PI/5);
+    }
+    ctx.closePath();
+    ctx.fillStyle='#FFD700';
+    ctx.shadowColor='#FFA000';
+    ctx.shadowBlur=30;
+    ctx.fill();
+
+    return canvas.toDataURL();
+}
+
+const starImage = createStarDataURL();
+
+// ---------- ADD MARKERS ----------
+marathonPoints.forEach(p=>{
+    const entity = viewer.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(p.lon,p.lat),
+        billboard:{
+            image: starImage,
+            width:64,
+            height:64,
+            verticalOrigin:Cesium.VerticalOrigin.BOTTOM,
+            scaleByDistance: new Cesium.NearFarScalar(1000000,1.5,20000000,0.8)
+        }
+    });
+    entity.data=p;
+});
+
+// ---------- POPUP ----------
+const label = document.getElementById('uiLabel');
+const closeBtn = document.getElementById('closeBtn');
+let activeEntity=null;
+
+const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+handler.setInputAction(function(click){
+    const picked=viewer.scene.pick(click.position);
+    if(Cesium.defined(picked)&&picked.id){
+        activeEntity=picked.id;
+        updatePopup();
+    } else {
+        label.style.display='none';
+        activeEntity=null;
+    }
+},Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+function updatePopup(){
+    if(!activeEntity || !activeEntity.data) return; // <-- zabezpieczenie
+    const p = activeEntity.data;
+    document.getElementById('labelHeader').innerText = `${p.country} — ${p.city}`;
+    const list = document.getElementById('labelList');
+    list.innerHTML = '';
+    p.marathons.forEach(m => {
+        const li = document.createElement('li');
+        li.innerHTML = `<b>${m.type}</b>: ${m.date}`;
+        list.appendChild(li);
+    });
+    label.style.display = 'block';
+}
+
+closeBtn.addEventListener('click',()=>{
+    label.style.display='none';
+    activeEntity=null;
+});
+
+viewer.camera.setView({
+    destination: Cesium.Cartesian3.fromDegrees(20,20,10000000)
+});
+
+label.style.display='none';
+
+</script>
 </body>
 </html>
