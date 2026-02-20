@@ -283,15 +283,15 @@ function waitForAllEntitiesRendered(callback) {
     const scene = viewer.scene;
 
     const handler = scene.postRender.addEventListener(function() {
-        // zbieramy wszystkie entity z wszystkich dataSources
-        const allEntities = viewer.dataSources
-            .reduce((arr, ds) => arr.concat(ds.entities.values), []);
-        
-        // sprawdzamy, czy każda entity ma polygon i material (jeżeli dotyczy)
+        // pobieramy wszystkie DataSources w tablicy
+        const allDataSources = viewer.dataSources.values; // <-- ważne!
+        const allEntities = allDataSources.flatMap(ds => ds.entities.values);
+
+        // sprawdzamy, czy każda entity ma polygon z materiałem lub billboard z obrazem
         const allReady = allEntities.every(e => {
             if (e.polygon) return !!e.polygon.material;
             if (e.billboard) return !!e.billboard.image;
-            return true; // inne entity typu point itp.
+            return true; // inne entity traktujemy jako gotowe
         });
 
         if (allReady) {
