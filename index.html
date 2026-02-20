@@ -259,7 +259,7 @@ function showLoadingText(newText) {
 
 // OPTIONAL:
 // półprzezroczysta nakładka OSM z etykietami:
-const layer = viewer.imageryLayers.addImageryProvider(
+viewer.imageryLayers.addImageryProvider(
     new Cesium.UrlTemplateImageryProvider({
         url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
         subdomains: ['a','b','c'],
@@ -279,20 +279,20 @@ viewer.scene.globe.tileLoadProgressEvent.addEventListener((count) => {
     }
 });
 
-
 function waitForGeoJsonRender(dataSource, callback) {
     const scene = viewer.scene;
     const entities = dataSource.entities.values;
 
-    const handler = scene.postRender.addEventListener(function() {
-        // Sprawdzamy, czy wszystkie polygony mają przypisany materiał i są gotowe do renderowania
+    let maxChecks = 200; // maksymalnie 200 klatek (~10 s przy 60fps)
+    const checkInterval = 50; // co 50 ms
+
+    const interval = setInterval(() => {
         const allReady = entities.every(e => e.polygon && e.polygon.material);
-        if (allReady) {
-            // usuń listener i wywołaj callback
-            handler();
+        if (allReady || maxChecks-- <= 0) {
+            clearInterval(interval);
             callback();
         }
-    });
+    }, checkInterval);
 }
 
 
