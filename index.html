@@ -17,34 +17,54 @@ html, body, #cesiumContainer {
 
 #uiLabel {
     position: absolute;
-    display: none;
-    background: rgba(10, 20, 40, 0.95);
-    color: white;
-    border-radius: 14px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
-    z-index: 50;
-
-    /* Nowe wymiary i wyśrodkowanie */
-    width: 75vw;     /* 25% wysokości viewport */
-    left: 50%;        /* ustaw na środek poziomo */
-    bottom: 5%;         /* 25% od góry (czyli 50% od dołu do środka) */
-    transform: translateX(-50%); /* przesunięcie do faktycznego środka */
-
+    top: 70%;  /* 70% od góry parenta */
+    left: 50%;
+    transform: translate(-50%, 100%); /* start poza ekranem w dół */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
     font-family: system-ui;
-    font-size: 1.5em;  /* większy tekst */
+    font-size: 1.5em;
     padding: 20px;
+
+    background: linear-gradient(135deg, #6fb1fc, #4364f7);
+    color: #fff;
+    border-radius: 20px;
+    border: 2px solid #ffffff55;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.4s ease-in-out;
+    z-index: 50;
 }
-#uiLabel h3 { margin:0 0 8px 0; font-size:32px; }
+
+#uiLabel.show {
+    transform: translate(-50%, 0);  /* element zjeżdża w górę do widocznej pozycji */
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#uiLabel h3 {
+    margin:0 0 8px 0;
+    font-size:32px;
+    color: #fff;   /* jasny, kontrastowy nagłówek */
+}
+
 #uiLabel ul {
     padding-left: 0;
     margin: 10px 0 0 0;
     list-style: none;
 }
+
+#uiLabel ul li {
+    margin: 4px 0;
+    font-weight: 500;
+    color: #f0f0f0;
+}
+
 #closeBtn {
     position: absolute;
     top: 8px;
@@ -52,6 +72,24 @@ html, body, #cesiumContainer {
     cursor: pointer;
     font-weight: bold;
     font-size: 1.2em;
+    color: #fff;
+    transition: color 0.3s ease;
+}
+
+#closeBtn:hover {
+    color: #ffdd57;  /* delikatny efekt hover */
+}
+
+/* responsywność (opcjonalnie) */
+@media (max-width: 480px) {
+    #uiLabel {
+        width: 85vw;
+        font-size: 1.2em;
+        padding: 16px;
+    }
+    #uiLabel h3 {
+        font-size: 24px;
+    }
 }
 </style>
 </head>
@@ -234,14 +272,32 @@ handler.setInputAction(function(click){
         activeEntity=picked.id;
         updatePopup();
     } else {
-        label.style.display='none';
+        //label.style.display='none';
+        label.classList.remove('show');
         activeEntity=null;
     }
 },Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
-function updatePopup(){
-    if(!activeEntity || !activeEntity.data) return; // <-- zabezpieczenie
+function updatePopup() {
+    if (!activeEntity || !activeEntity.data) return;
     const p = activeEntity.data;
+
+    // jeśli popup jest już pokazany
+    if (label.classList.contains('show')) {
+        // najpierw animacja znikania
+        label.classList.remove('show');
+
+        // po zakończeniu animacji chowającej, aktualizujemy treść i wjeżdżamy
+        label.addEventListener('transitionend', function handler() {
+            label.removeEventListener('transitionend', handler);
+            showPopupContent(p);
+        });
+    } else {
+        showPopupContent(p);
+    }
+}
+
+function showPopupContent(p) {
     document.getElementById('labelHeader').innerText = `${p.country} — ${p.city}`;
     const list = document.getElementById('labelList');
     list.innerHTML = '';
@@ -250,12 +306,13 @@ function updatePopup(){
         li.innerHTML = `<b>${m.type}</b>: ${m.date}`;
         list.appendChild(li);
     });
-    label.style.display = 'block';
+    label.classList.add('show');
 }
 
-closeBtn.addEventListener('click',()=>{
-    label.style.display='none';
-    activeEntity=null;
+closeBtn.addEventListener('click', ()=>{
+    // Usuwamy klasę show, animacja powrotu w dół
+    label.classList.remove('show');
+    activeEntity = null;
 });
 
 viewer.camera.setView({
@@ -265,30 +322,7 @@ viewer.scene.screenSpaceCameraController.minimumZoomDistance = 5000000;
 viewer.scene.screenSpaceCameraController.maximumZoomDistance = 7000000*3.14;
 
 
-label.style.display='none';
-
-/*const GLOBUS_OFFSET = 100; // w metrach nad powierzchnią globu
-
-// Funkcja do ustawiania verticalOrigin / przesunięcia gwiazdki
-function updateStarPosition(billboardEntity) {
-    const camPos = viewer.camera.positionWC; // pozycja kamery
-    const globePos = billboardEntity.position.getValue(Cesium.JulianDate.now());
-
-    const dir = Cesium.Cartesian3.subtract(globePos, camPos, new Cesium.Cartesian3());
-    Cesium.Cartesian3.normalize(dir, dir);
-
-    // przesuwamy billboard wzdłuż wektora w stronę kamery
-    const offset = Cesium.Cartesian3.multiplyByScalar(dir, GLOBUS_OFFSET, new Cesium.Cartesian3());
-    billboardEntity.billboard.pixelOffset = new Cesium.Cartesian2(offset.x, offset.y);
-}
-
-viewer.scene.preRender.addEventListener(() => {
-    viewer.entities.values.forEach(e => {
-        if(e.billboard && e.data) {
-            updateStarPosition(e);
-        }
-    });
-});*/
+label.classList.remove('show');
 
 </script>
 </body>
