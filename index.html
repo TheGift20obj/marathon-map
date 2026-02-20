@@ -194,7 +194,7 @@ function hideLoadingScreen() {
     setTimeout(() => {
         loadingScreen.classList.add('hide');
         setTimeout(() => loadingScreen.style.display = 'none', 1000);
-    }, 3500);
+    }, 5000);
 }
 
 function checkLoading() {
@@ -255,7 +255,7 @@ function showLoadingText(newText) {
         textEl.innerText = newText;
         // Fade in
         textEl.style.opacity = 1;
-    }, 300); // czas dopasowany do transition CSS
+    }, 350); // czas dopasowany do transition CSS
 }
 
 
