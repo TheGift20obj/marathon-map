@@ -279,20 +279,26 @@ viewer.scene.globe.tileLoadProgressEvent.addEventListener((count) => {
     }
 });
 
-function waitForGeoJsonRender(dataSource, callback) {
+function waitForAllEntitiesRendered(callback) {
     const scene = viewer.scene;
-    const entities = dataSource.entities.values;
 
-    let maxChecks = 200; // maksymalnie 200 klatek (~10 s przy 60fps)
-    const checkInterval = 50; // co 50 ms
+    const handler = scene.postRender.addEventListener(function() {
+        // zbieramy wszystkie entity z wszystkich dataSources
+        const allEntities = viewer.dataSources
+            .reduce((arr, ds) => arr.concat(ds.entities.values), []);
+        
+        // sprawdzamy, czy każda entity ma polygon i material (jeżeli dotyczy)
+        const allReady = allEntities.every(e => {
+            if (e.polygon) return !!e.polygon.material;
+            if (e.billboard) return !!e.billboard.image;
+            return true; // inne entity typu point itp.
+        });
 
-    const interval = setInterval(() => {
-        const allReady = entities.every(e => e.polygon && e.polygon.material);
-        if (allReady || maxChecks-- <= 0) {
-            clearInterval(interval);
+        if (allReady) {
+            handler(); // usuń listener
             callback();
         }
-    }, checkInterval);
+    });
 }
 
 
@@ -305,10 +311,6 @@ Cesium.GeoJsonDataSource.load('countries.geojson', {
         e.polygon.outline = true;
         e.polygon.outlineColor = Cesium.Color.BLACK;
     });
-    waitForGeoJsonRender(ds, () => {
-            geoJsonReady = true;
-            checkLoading();
-        });
 });
 
 viewer.scene.globe.enableLighting = true;
@@ -428,6 +430,15 @@ viewer.scene.screenSpaceCameraController.maximumZoomDistance = 7000000*3.14;
 
 
 label.classList.remove('show');
+
+// Przykład użycia z loading screen
+waitForAllEntitiesRendered(() => {
+    // wszystkie entity gotowe → fade-out loading screen
+    setTimeout(() => {
+        loadingScreen.classList.add('hide');
+        setTimeout(() => loadingScreen.style.display = 'none', 1000);
+    }, 1000); // dodatkowe 5 sekund czekania
+});
 
 </script>
 </body>
