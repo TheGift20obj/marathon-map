@@ -10,117 +10,134 @@
 
 <style>
 html, body, #cesiumContainer {
-    width:100%; height:100%; margin:0; padding:0;
-    overflow:hidden; background:#000814;
+    width:100%;
+    height:100%;
+    margin:0;
+    padding:0;
+    overflow:hidden;
+    background:#000814;
 }
+
 #cesiumContainer { position:relative; }
+
+/* ================= POPUP ================= */
 
 #uiLabel {
     position: absolute;
-    top: 70%;  /* 70% od góry parenta */
+    top: 70%;
     left: 50%;
-    transform: translate(-50%, 100%); /* start poza ekranem w dół */
+    transform: translate(-50%, 100%);
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
     text-align: center;
-    font-family: system-ui;
-    font-size: 1.5em;
-    padding: 20px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+    font-size: 1.4rem;
+    padding: 22px;
+    width: clamp(280px, 40vw, 520px);
 
     background: linear-gradient(135deg, #6fb1fc, #4364f7);
     color: #fff;
-    border-radius: 20px;
-    border: 2px solid #ffffff55;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+
+    border-radius: 22px;
+    border: 2px solid rgba(255,255,255,0.25);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+
+    backdrop-filter: blur(6px);
 
     opacity: 0;
     pointer-events: none;
-    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.4s ease-in-out;
+
+    transition:
+        transform 0.55s cubic-bezier(0.68, -0.55, 0.27, 1.55),
+        opacity 0.4s ease;
+
     z-index: 50;
 }
 
 #uiLabel.show {
-    transform: translate(-50%, 0);  /* element zjeżdża w górę do widocznej pozycji */
+    transform: translate(-50%, 0);
     opacity: 1;
     pointer-events: auto;
 }
 
 #uiLabel h3 {
-    margin:0 0 8px 0;
-    font-size:32px;
-    color: #fff;   /* jasny, kontrastowy nagłówek */
+    margin:0 0 10px 0;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
 }
 
 #uiLabel ul {
-    padding-left: 0;
-    margin: 10px 0 0 0;
+    padding: 0;
+    margin: 8px 0 0 0;
     list-style: none;
 }
 
 #uiLabel ul li {
-    margin: 4px 0;
+    margin: 6px 0;
     font-weight: 500;
-    color: #f0f0f0;
+    opacity: 0.95;
 }
+
+/* CLOSE BUTTON */
 
 #closeBtn {
     position: absolute;
-    top: 8px;
-    right: 12px;
+    top: 10px;
+    right: 14px;
     cursor: pointer;
-    font-weight: bold;
-    font-size: 1.2em;
-    color: #fff;
-    transition: color 0.3s ease;
+    font-size: 1.4rem;
+    font-weight: 700;
+    transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 #closeBtn:hover {
-    color: #ffdd57;  /* delikatny efekt hover */
+    transform: scale(1.15);
+    opacity: 0.8;
 }
 
-/* responsywność (opcjonalnie) */
-@media (max-width: 480px) {
-    #uiLabel {
-        width: 85vw;
-        font-size: 1.2em;
-        padding: 16px;
-    }
-    #uiLabel h3 {
-        font-size: 24px;
-    }
-}
+/* ================= LOADING SCREEN ================= */
 
-/* Nowy styl loading screen */
 #loadingScreen {
     position: fixed;
-    top:0; left:0;
-    width:100%; height:100%;
+    inset: 0;
     background: linear-gradient(135deg,#6fb1fc,#4364f7);
     color: white;
+
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-direction: column;
+
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
     z-index: 1000;
     opacity: 1;
-    transition: opacity 1s ease-in-out;
-    flex-direction: column;
-    font-family: system-ui;
+    transition: opacity 1s ease;
+}
+
+#loadingScreen.hide {
+    opacity: 0;
+    pointer-events: none;
 }
 
 #loaderContent {
     text-align: center;
+    padding: 20px;
 }
 
+/* SPINNER */
+
 .spinner {
-    width: 60px;
-    height: 60px;
-    border: 6px solid #ffffff44;
+    width: 64px;
+    height: 64px;
+    border: 6px solid rgba(255,255,255,0.25);
     border-top: 6px solid #fff;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-bottom: 20px;
+    margin-bottom: 22px;
 }
 
 @keyframes spin {
@@ -129,14 +146,82 @@ html, body, #cesiumContainer {
 }
 
 #loadingText {
-    font-size: 1.5em;
-    margin-top: 0.5em;
-    transition: opacity 0.8s ease;
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: opacity 0.6s ease;
 }
 
-#loadingScreen.hide {
-    opacity: 0;
-    pointer-events: none;
+/* ================= RESPONSIVE ================= */
+
+/* MOBILE */
+@media (max-width: 600px) {
+
+    #uiLabel {
+        top: 72%;
+        width: 88vw;
+        padding: 18px;
+        font-size: 1.1rem;
+        border-radius: 18px;
+    }
+
+    #uiLabel h3 {
+        font-size: 1.5rem;
+    }
+
+    #uiLabel ul li {
+        font-size: 0.95rem;
+    }
+
+    .spinner {
+        width: 44px;
+        height: 44px;
+        border-width: 4px;
+    }
+
+    #loadingText {
+        font-size: 1.2rem;
+    }
+}
+
+/* TABLET */
+@media (min-width: 601px) and (max-width: 1024px) {
+
+    #uiLabel {
+        width: 60vw;
+        font-size: 1.3rem;
+    }
+
+    #uiLabel h3 {
+        font-size: 1.8rem;
+    }
+
+    .spinner {
+        width: 54px;
+        height: 54px;
+    }
+}
+
+/* LARGE DESKTOP */
+@media (min-width: 1600px) {
+
+    #uiLabel {
+        font-size: 1.6rem;
+        padding: 30px;
+    }
+
+    #uiLabel h3 {
+        font-size: 2.2rem;
+    }
+
+    .spinner {
+        width: 82px;
+        height: 82px;
+    }
+
+    #loadingText {
+        font-size: 2rem;
+    }
 }
 </style>
 </head>
@@ -150,7 +235,6 @@ html, body, #cesiumContainer {
     <ul id="labelList"></ul>
 </div>
 
-<!-- DODAJ PRZED CESIUM CONTAINER -->
 <div id="loadingScreen">
   <div id="loaderContent">
     <div class="spinner"></div>
@@ -167,7 +251,9 @@ if (typeof Cesium === "undefined") {
 
 Cesium.Ion.defaultAccessToken = null;
 
-// ---------- DATA ----------
+const isMobile = window.innerWidth < 600;
+const starSize = isMobile ? 68 : 76;
+
 const RAW_DATA = `
 1|Zjednoczone Emiraty Arabskie|Dubai|55.2708|25.2048|marathon|01.02.2026
 2|Egipt|Kair - Saqqara|31.2167|29.8717|half marathon|13.02.2026
@@ -190,7 +276,6 @@ let geoJsonReady = false;
 const loadingText = document.getElementById('loadingText');
 
 function hideLoadingScreen() {
-    // czekamy jeszcze 5 sekund dla efektu
     setTimeout(() => {
         loadingScreen.classList.add('hide');
         setTimeout(() => loadingScreen.style.display = 'none', 1000);
@@ -219,11 +304,9 @@ function parseMarathons(text){
 
 const marathonPoints = parseMarathons(RAW_DATA);
 
-// ---------- VIEWER WITH STATIC EARTH TEXTURE (NO AUTH, NO TILES) ----------
 const viewer = new Cesium.Viewer('cesiumContainer',{
     terrainProvider: new Cesium.EllipsoidTerrainProvider(),
     imageryProvider: new Cesium.SingleTileImageryProvider({
-        // NASA Blue Marble style – natural globe colors
         url: 'https://upload.wikimedia.org/wikipedia/commons/2/2c/Blue_Marble_2002.png'
     }),
     baseLayerPicker:false,
@@ -249,31 +332,25 @@ viewer.imageryLayers.addImageryProvider(
 
 function showLoadingText(newText) {
     const textEl = document.getElementById('loadingText');
-    // Fade out
     textEl.style.opacity = 0;
     setTimeout(() => {
         textEl.innerText = newText;
-        // Fade in
         textEl.style.opacity = 1;
-    }, 350); // czas dopasowany do transition CSS
+    }, 350);
 }
 
-
-// OPTIONAL:
-// półprzezroczysta nakładka OSM z etykietami:
 viewer.imageryLayers.addImageryProvider(
     new Cesium.UrlTemplateImageryProvider({
         url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
         subdomains: ['a','b','c'],
         minimumLevel: 0,
         maximumLevel: 19,
-        alpha: 0.45, // półprzezroczystość
+        alpha: 0.45,
         credit: '© OpenStreetMap contributors'
     })
 );
 
 viewer.scene.globe.tileLoadProgressEvent.addEventListener((count) => {
-    // count = liczba aktualnie ładowanych tiles
     if (count === 0 && !imageryReady) {
         imageryReady = true;
         showLoadingText('Malowanie krajów...');
@@ -298,7 +375,6 @@ viewer.scene.globe.enableLighting = true;
 viewer.scene.skyAtmosphere.show = true;
 viewer.scene.globe.atmosphereLightIntensity = 10.0;
 
-// ---------- LIMIT CAMERA CONTROLS (ONLY ZOOM + ROTATE) ----------
 const controller = viewer.scene.screenSpaceCameraController;
 controller.enableTilt = false;
 controller.enableLook = false;
@@ -307,7 +383,6 @@ viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
     Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK
 );
 
-// ---------- STAR ICON (BIGGER + GLOW) ----------
 function createStarDataURL(){
     const canvas=document.createElement('canvas');
     canvas.width=128;
@@ -333,22 +408,19 @@ function createStarDataURL(){
 
 const starImage = createStarDataURL();
 
-// ---------- ADD MARKERS ----------
 marathonPoints.forEach(p=>{
     const entity = viewer.entities.add({
         position: Cesium.Cartesian3.fromDegrees(p.lon,p.lat,150000),
         billboard:{
             image: starImage,
-            width:64,
-            height:64,
-            //verticalOrigin:Cesium.VerticalOrigin.TOP,
+            width:starSize,
+            height:starSize,
             scaleByDistance: new Cesium.NearFarScalar(1000000,1.5,20000000,0.8)
         },
     });
     entity.data=p;
 });
 
-// ---------- POPUP ----------
 const label = document.getElementById('uiLabel');
 const closeBtn = document.getElementById('closeBtn');
 let activeEntity=null;
@@ -360,7 +432,6 @@ handler.setInputAction(function(click){
         activeEntity=picked.id;
         updatePopup();
     } else {
-        //label.style.display='none';
         label.classList.remove('show');
         activeEntity=null;
     }
@@ -370,12 +441,8 @@ function updatePopup() {
     if (!activeEntity || !activeEntity.data) return;
     const p = activeEntity.data;
 
-    // jeśli popup jest już pokazany
     if (label.classList.contains('show')) {
-        // najpierw animacja znikania
         label.classList.remove('show');
-
-        // po zakończeniu animacji chowającej, aktualizujemy treść i wjeżdżamy
         label.addEventListener('transitionend', function handler() {
             label.removeEventListener('transitionend', handler);
             showPopupContent(p);
@@ -398,7 +465,6 @@ function showPopupContent(p) {
 }
 
 closeBtn.addEventListener('click', ()=>{
-    // Usuwamy klasę show, animacja powrotu w dół
     label.classList.remove('show');
     activeEntity = null;
 });
