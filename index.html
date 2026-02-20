@@ -183,15 +183,24 @@ const RAW_DATA = `
 7|USA|Alaska - Anchorage|-149.9003|61.2181|marathon|20.06.2026
 8|Canada|Vancouver|-123.1207|49.2827|half marathon|28.06.2026
 `;
-const loadingScreen = document.getElementById('loadingScreen');
-// Flag, które mówią czy wszystko jest załadowane
+
 let imageryReady = false;
 let geoJsonReady = false;
 
-// Funkcja ukrywania ekranu ładowania z animacją fade out
+const loadingText = document.getElementById('loadingText');
+
 function hideLoadingScreen() {
-    loadingScreen.classList.add('hide');
-    setTimeout(()=> loadingScreen.style.display='none', 1000); // po zakończeniu fade-out
+    // czekamy jeszcze 5 sekund dla efektu
+    setTimeout(() => {
+        loadingScreen.classList.add('hide');
+        setTimeout(() => loadingScreen.style.display = 'none', 1000);
+    }, 3500);
+}
+
+function checkLoading() {
+    if (imageryReady && geoJsonReady) {
+        hideLoadingScreen();
+    }
 }
 
 function parseMarathons(text){
@@ -237,13 +246,6 @@ viewer.imageryLayers.addImageryProvider(
     })
 );
 
-// Funkcja sprawdzająca, czy wszystkie elementy gotowe
-function checkLoading() {
-    if (imageryReady && geoJsonReady) {
-        // Małe opóźnienie, żeby użytkownik zobaczył efekt „malowania”
-        setTimeout(() => hideLoadingScreen(), 500);
-    }
-}
 
 function showLoadingText(newText) {
     const textEl = document.getElementById('loadingText');
@@ -279,29 +281,6 @@ viewer.scene.globe.tileLoadProgressEvent.addEventListener((count) => {
     }
 });
 
-function waitForAllEntitiesRendered(callback) {
-    const scene = viewer.scene;
-
-    const handler = scene.postRender.addEventListener(function() {
-        // pobieramy wszystkie DataSources w tablicy
-        const allDataSources = viewer.dataSources.values; // <-- ważne!
-        const allEntities = allDataSources.flatMap(ds => ds.entities.values);
-
-        // sprawdzamy, czy każda entity ma polygon z materiałem lub billboard z obrazem
-        const allReady = allEntities.every(e => {
-            if (e.polygon) return !!e.polygon.material;
-            if (e.billboard) return !!e.billboard.image;
-            return true; // inne entity traktujemy jako gotowe
-        });
-
-        if (allReady) {
-            handler(); // usuń listener
-            callback();
-        }
-    });
-}
-
-
 Cesium.GeoJsonDataSource.load('countries.geojson', {
     clampToGround: false
 }).then(function(ds){
@@ -311,6 +290,8 @@ Cesium.GeoJsonDataSource.load('countries.geojson', {
         e.polygon.outline = true;
         e.polygon.outlineColor = Cesium.Color.BLACK;
     });
+    geoJsonReady = true;
+    checkLoading();
 });
 
 viewer.scene.globe.enableLighting = true;
@@ -430,15 +411,6 @@ viewer.scene.screenSpaceCameraController.maximumZoomDistance = 7000000*3.14;
 
 
 label.classList.remove('show');
-
-// Przykład użycia z loading screen
-waitForAllEntitiesRendered(() => {
-    // wszystkie entity gotowe → fade-out loading screen
-    setTimeout(() => {
-        loadingScreen.classList.add('hide');
-        setTimeout(() => loadingScreen.style.display = 'none', 1000);
-    }, 1000); // dodatkowe 5 sekund czekania
-});
 
 </script>
 </body>
